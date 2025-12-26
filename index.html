@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.33</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.35</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -551,7 +551,7 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.33</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.35</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -652,7 +652,7 @@
                 <option value="void">Void (Black)</option>
                 <option value="hyperdrive">Hyperdrive</option>
                 <option value="spectrum">Spectrum Tunnel</option>
-                <option value="flubber">Flubber Bounce</option>
+                <option value="flubber">XMEME</option>
             </select>
         </div>
     </div>
@@ -1080,7 +1080,7 @@ const screensaverEngine = {
     mode: 'original',
     stars: [], // for hyperdrive
     tunnelRotation: 0, // for Spectrum Tunnel
-    flubber: { x: 0, y: 0, vx: 2, vy: 2, w: 100, h: 100, squishX: 1, squishY: 1, baseW: 100, baseH: 100 },
+    flubber: { x: 0, y: 0, vx: 3.5, vy: 3.5, w: 100, h: 100, squishX: 1, squishY: 1, baseW: 100, baseH: 100, shape: 'square', hitCount: 0 },
 
     init: () => {
         screensaverEngine.ctx = screensaverEngine.canvas.getContext('2d');
@@ -1290,54 +1290,119 @@ const screensaverEngine = {
     drawFlubber: (ctx, w, h, data) => {
         const f = screensaverEngine.flubber;
         
+        // BASS REACTIVITY
+        let bass = 0; for(let i=0; i<10; i++) bass+=data[i];
+        bass = bass / 10;
+        const beatPulse = (bass / 255) * 0.4; // Max 40% size increase on beat
+
         // Physics update
         f.x += f.vx;
         f.y += f.vy;
         
-        // Restore squish to 1
-        f.squishX += (1 - f.squishX) * 0.1;
-        f.squishY += (1 - f.squishY) * 0.1;
+        // Restore squish to 1 (Faster restoration due to higher speed)
+        f.squishX += (1 - f.squishX) * 0.15;
+        f.squishY += (1 - f.squishY) * 0.15;
         
-        // Collision
+        // Collision Detection
+        let hit = false;
+        
         if (f.x + f.baseW/2 > w) {
             f.x = w - f.baseW/2;
             f.vx *= -1;
             f.squishX = 0.6; f.squishY = 1.4;
+            hit = true;
         } else if (f.x - f.baseW/2 < 0) {
             f.x = f.baseW/2;
             f.vx *= -1;
             f.squishX = 0.6; f.squishY = 1.4;
+            hit = true;
         }
         
         if (f.y + f.baseH/2 > h) {
             f.y = h - f.baseH/2;
             f.vy *= -1;
             f.squishY = 0.6; f.squishX = 1.4;
+            hit = true;
         } else if (f.y - f.baseH/2 < 0) {
             f.y = f.baseH/2;
             f.vy *= -1;
             f.squishY = 0.6; f.squishX = 1.4;
+            hit = true;
         }
 
-        // Jelly Wiggle
-        const time = Date.now() * 0.01;
-        const wiggleX = Math.sin(time) * 0.1;
-        const wiggleY = Math.cos(time) * 0.1;
+        // Shapeshift Logic on Hit
+        if (hit) {
+            f.hitCount++;
+            if (f.hitCount % 2 === 0) {
+                // Even hits: Back to Square
+                f.shape = 'square';
+            } else {
+                // Odd hits: Random Shape
+                const shapes = ['circle', 'triangle', 'diamond'];
+                f.shape = shapes[Math.floor(Math.random() * shapes.length)];
+            }
+        }
+
+        // Jelly Wiggle - Faster on bass
+        const wiggleSpeed = 0.01 + (bass/255)*0.05;
+        const time = Date.now() * wiggleSpeed;
+        const wiggleX = Math.sin(time) * (0.1 + beatPulse/2);
+        const wiggleY = Math.cos(time) * (0.1 + beatPulse/2);
         
-        // Draw
+        // Draw Body
         ctx.fillStyle = visualizer.color; // "#39ff14";
         ctx.shadowColor = visualizer.color;
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 20 + (bass/255)*20; // Glow pulses with bass
         
         ctx.save();
         ctx.translate(f.x, f.y);
-        ctx.scale(f.squishX + wiggleX, f.squishY + wiggleY);
+        // Apply bass pulse to scale here
+        ctx.scale(f.squishX + wiggleX + beatPulse, f.squishY + wiggleY + beatPulse);
         
-        // Draw Rounded Rect (Soft shape)
         const s = f.baseW;
         ctx.beginPath();
-        ctx.rect(-s/2, -s/2, s, s);
+        
+        // Draw Shape based on state
+        if (f.shape === 'square') {
+            if (ctx.roundRect) {
+                ctx.roundRect(-s/2, -s/2, s, s, s/3); // Heavy rounding
+            } else {
+                ctx.rect(-s/2, -s/2, s, s); 
+            }
+        } else if (f.shape === 'circle') {
+            ctx.arc(0, 0, s/2, 0, Math.PI * 2);
+        } else if (f.shape === 'triangle') {
+            ctx.moveTo(0, -s/2);
+            ctx.lineTo(s/2, s/2);
+            ctx.lineTo(-s/2, s/2);
+            ctx.closePath();
+        } else if (f.shape === 'diamond') {
+            ctx.moveTo(0, -s/2); // Top
+            ctx.lineTo(s/2, 0);  // Right
+            ctx.lineTo(0, s/2);  // Bottom
+            ctx.lineTo(-s/2, 0); // Left
+            ctx.closePath();
+        }
+        
         ctx.fill();
+
+        // Draw "X" ONLY if shape is Square
+        if (f.shape === 'square') {
+            ctx.strokeStyle = "#000000"; // Black X
+            ctx.lineWidth = 8;
+            ctx.lineCap = "round";
+            ctx.shadowBlur = 0; // No glow on the black X
+            
+            ctx.beginPath();
+            // Top-Left to Bottom-Right
+            ctx.moveTo(-s/4, -s/4);
+            ctx.lineTo(s/4, s/4);
+            // Top-Right to Bottom-Left
+            ctx.moveTo(s/4, -s/4);
+            ctx.lineTo(-s/4, s/4);
+            ctx.stroke();
+        }
+
         ctx.restore();
         
         ctx.shadowBlur = 0;
