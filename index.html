@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.32</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.33</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -551,7 +551,7 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.32</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.33</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -652,6 +652,7 @@
                 <option value="void">Void (Black)</option>
                 <option value="hyperdrive">Hyperdrive</option>
                 <option value="spectrum">Spectrum Tunnel</option>
+                <option value="flubber">Flubber Bounce</option>
             </select>
         </div>
     </div>
@@ -1079,6 +1080,7 @@ const screensaverEngine = {
     mode: 'original',
     stars: [], // for hyperdrive
     tunnelRotation: 0, // for Spectrum Tunnel
+    flubber: { x: 0, y: 0, vx: 2, vy: 2, w: 100, h: 100, squishX: 1, squishY: 1, baseW: 100, baseH: 100 },
 
     init: () => {
         screensaverEngine.ctx = screensaverEngine.canvas.getContext('2d');
@@ -1086,7 +1088,6 @@ const screensaverEngine = {
         window.addEventListener('resize', screensaverEngine.resize);
         
         // CLEAN DISMISSAL LOGIC
-        // Simple click/tap turns it off immediately
         screensaverEngine.canvas.addEventListener('click', (e) => {
              if (screensaverEngine.isActive) {
                  screensaverEngine.toggle();
@@ -1095,6 +1096,10 @@ const screensaverEngine = {
         
         // Init Starfield
         for(let i=0; i<200; i++) screensaverEngine.stars.push({x: Math.random()*2000-1000, y: Math.random()*2000-1000, z: Math.random()*1000});
+        
+        // Init Flubber
+        screensaverEngine.flubber.x = window.innerWidth / 2;
+        screensaverEngine.flubber.y = window.innerHeight / 2;
     },
 
     resize: () => {
@@ -1151,6 +1156,7 @@ const screensaverEngine = {
         if (mode === 'original') screensaverEngine.drawOriginal(ctx, w, h, data);
         else if (mode === 'hyperdrive') screensaverEngine.drawHyperdrive(ctx, w, h, data);
         else if (mode === 'spectrum') screensaverEngine.drawSpectrumTunnel(ctx, w, h, data);
+        else if (mode === 'flubber') screensaverEngine.drawFlubber(ctx, w, h, data);
         // 'void' draws nothing else
 
         // Instruction Text (Only for void mode now)
@@ -1278,6 +1284,62 @@ const screensaverEngine = {
             
             ctx.restore();
         }
+        ctx.shadowBlur = 0;
+    },
+    
+    drawFlubber: (ctx, w, h, data) => {
+        const f = screensaverEngine.flubber;
+        
+        // Physics update
+        f.x += f.vx;
+        f.y += f.vy;
+        
+        // Restore squish to 1
+        f.squishX += (1 - f.squishX) * 0.1;
+        f.squishY += (1 - f.squishY) * 0.1;
+        
+        // Collision
+        if (f.x + f.baseW/2 > w) {
+            f.x = w - f.baseW/2;
+            f.vx *= -1;
+            f.squishX = 0.6; f.squishY = 1.4;
+        } else if (f.x - f.baseW/2 < 0) {
+            f.x = f.baseW/2;
+            f.vx *= -1;
+            f.squishX = 0.6; f.squishY = 1.4;
+        }
+        
+        if (f.y + f.baseH/2 > h) {
+            f.y = h - f.baseH/2;
+            f.vy *= -1;
+            f.squishY = 0.6; f.squishX = 1.4;
+        } else if (f.y - f.baseH/2 < 0) {
+            f.y = f.baseH/2;
+            f.vy *= -1;
+            f.squishY = 0.6; f.squishX = 1.4;
+        }
+
+        // Jelly Wiggle
+        const time = Date.now() * 0.01;
+        const wiggleX = Math.sin(time) * 0.1;
+        const wiggleY = Math.cos(time) * 0.1;
+        
+        // Draw
+        ctx.fillStyle = visualizer.color; // "#39ff14";
+        ctx.shadowColor = visualizer.color;
+        ctx.shadowBlur = 20;
+        
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.scale(f.squishX + wiggleX, f.squishY + wiggleY);
+        
+        // Draw Rounded Rect (Soft shape)
+        const s = f.baseW;
+        ctx.beginPath();
+        ctx.rect(-s/2, -s/2, s, s);
+        ctx.fill();
+        ctx.restore();
+        
         ctx.shadowBlur = 0;
     }
 };
