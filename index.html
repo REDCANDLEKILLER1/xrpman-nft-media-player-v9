@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.26</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.32</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -551,7 +551,7 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.26</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.32</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -570,7 +570,7 @@
                 <!-- 1. Header Row -->
                 <div class="flex justify-between items-center bg-[#0a0a0a] border-b border-[#333] px-3 py-2">
                     <label class="text-[9px] text-[#39ff14] font-bold tracking-widest">XRPL WALLET ADDRESSES</label>
-                    <button onclick="document.getElementById('accountInput').value=''; document.getElementById('accountInput').focus(); app.validateInput(document.getElementById('accountInput'));" 
+                    <button onclick="app.clearWallets();" 
                             class="text-[9px] px-2 py-1 border border-[#333] text-[#666] hover:text-[#39ff14] hover:border-[#39ff14] bg-black font-bold transition-all">
                         CLEAR
                     </button>
@@ -1478,52 +1478,94 @@ const app = {
         
         app.showStatus(`SCANNING LEDGER FOR ${accounts.length} WALLET(S)...`, true);
 
-        let totalNftsFound = 0;
+        // --- NEW DEEP SCANNING LOGIC ---
+        let allNfts = [];
 
+        // STAGE 1: HARVEST ALL URIs (Fast Loop)
         for (const account of accounts) {
             try {
-                const response = await fetch("https://xrplcluster.com/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
+                let marker = undefined;
+                let hasMore = true;
+                let pageCount = 0;
+
+                while (hasMore) {
+                    pageCount++;
+                    app.showStatus(`HARVESTING: ${account.substring(0,6)}... (PAGE ${pageCount})`, true);
+
+                    const payload = {
                         method: "account_nfts",
-                        params: [{ account: account, ledger_index: "validated", limit: 100 }]
-                    })
-                });
+                        params: [{ 
+                            account: account, 
+                            ledger_index: "validated", 
+                            limit: 200 // Lower limit, but more pages
+                        }]
+                    };
+                    if (marker) payload.params[0].marker = marker;
 
-                const data = await response.json();
-                
-                if (data.result && data.result.error) {
-                    app.showStatus(`[Error: ${account.slice(0, 5)}... failed (${data.result.error})]`, false);
-                    continue;
-                }
-                
-                let nfts = data.result.account_nfts || [];
-                totalNftsFound += nfts.length;
-                
-                app.showStatus(`ANALYZING ${totalNftsFound} ASSETS from ${accounts.length} wallet(s)...`, true);
+                    const response = await fetch("https://xrplcluster.com/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
 
-                for (const nft of nfts) {
-                    const uriClean = app.decode(nft.URI);
-                    if (uriClean) {
-                        const tempId = `temp-${nft.NFTokenID}`;
-                        // We do not create a DOM element yet, we wait for resolve
-                        app.loadMeta(uriClean, nft, account);
+                    const data = await response.json();
+                    
+                    if (data.result && data.result.error) {
+                        console.error(`Ledger Error: ${data.result.error}`);
+                        hasMore = false;
+                        break;
+                    }
+                    
+                    const batch = data.result.account_nfts || [];
+                    batch.forEach(nft => {
+                        const uriClean = app.decode(nft.URI);
+                        if(uriClean) {
+                            allNfts.push({ uri: uriClean, nft: nft, account: account });
+                        }
+                    });
+
+                    if (data.result.marker) {
+                        marker = data.result.marker;
+                        // Tiny delay to be polite to the node
+                        await new Promise(r => setTimeout(r, 200));
+                    } else {
+                        hasMore = false;
                     }
                 }
-
             } catch (e) {
-                console.error(`Fetch error for ${account}:`, e);
-                app.showStatus(`[Connection Error for ${account.slice(0, 5)}...]`, false);
+                console.error("Fetch Error", e);
             }
         }
+
+        app.showStatus(`FOUND ${allNfts.length} ASSETS. PROCESSING METADATA...`, true);
+
+        // STAGE 2: PROCESS BATCHES (Slow & Careful)
+        // Batch size of 5 for metadata fetching to avoid browser/IPFS bans
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < allNfts.length; i += BATCH_SIZE) {
+            const chunk = allNfts.slice(i, i + BATCH_SIZE);
+            
+            // Update status every 50 items so user knows it's alive
+            if (i % 50 === 0) {
+                app.showStatus(`ANALYZING ${i}/${allNfts.length}... FOUND: ${app.audioCount} AUDIO`, true);
+            }
+
+            await Promise.all(chunk.map(async (item) => {
+                await app.loadMeta(item.uri, item.nft, item.account);
+            }));
+            
+            // Tiny breathing room for network
+            await new Promise(r => setTimeout(r, 50));
+        }
         
-        // After scanning loop
-        if (totalNftsFound > 0) {
+        // FINAL STATUS
+        if (app.audioCount > 0 || app.videoCount > 0) {
             app.isLoaded = true;
             app.updateTrackDisplay('none', -1);
+            app.showStatus(`SCAN COMPLETE: ${app.audioCount} AUDIO | ${app.videoCount} VIDEO`, true);
         } else {
              document.getElementById('marqueeText').textContent = "NO ASSETS FOUND --- TIP: LOAD MULTIPLE WALLETS (ONE PER LINE)";
+             app.showStatus("SCAN COMPLETE: NO MEDIA FOUND", false);
         }
     },
 
@@ -1537,12 +1579,23 @@ const app = {
             let audioSrc = null;
             let videoSrc = null;
             
-            // Check for explicit fields first
+            // 1. Direct fields
             if (meta.audio) audioSrc = app.resolve(meta.audio);
             else if (meta.music) audioSrc = app.resolve(meta.music);
             if (meta.video) videoSrc = app.resolve(meta.video);
             
-            // Check animation_url if neither found
+            // 2. 'files' Array Check (common in Sologenic/XRP.cafe)
+            if (!audioSrc && !videoSrc && meta.files && Array.isArray(meta.files)) {
+                // Find audio
+                const audioFile = meta.files.find(f => f.mimeType && f.mimeType.startsWith('audio/'));
+                if (audioFile) audioSrc = app.resolve(audioFile.url || audioFile.uri);
+                
+                // Find video
+                const videoFile = meta.files.find(f => f.mimeType && f.mimeType.startsWith('video/'));
+                if (videoFile) videoSrc = app.resolve(videoFile.url || videoFile.uri);
+            }
+
+            // 3. Fallback to animation_url with smarter detection
             if (!audioSrc && !videoSrc && meta.animation_url) {
                 const anim = app.resolve(meta.animation_url);
                 const lowerAnim = anim.toLowerCase();
@@ -1552,19 +1605,30 @@ const app = {
                 } else if (lowerAnim.match(/\.(mp4|webm|mov|m4v|mkv)$/)) {
                     videoSrc = anim;
                 } else {
-                    // Fallback: try to guess or just treat as unknown (skip)
-                    // Some MP4s don't have extension in IPFS path, could fetch HEAD but too slow
+                    // It has animation_url but NO EXTENSION.
+                    // If category is "audio" or "music", force it to be audio.
+                    if (meta.category && (meta.category.toLowerCase() === 'audio' || meta.category.toLowerCase() === 'music')) {
+                        audioSrc = anim;
+                    } else {
+                        // Blind guess: Assume audio if not explicitly video? 
+                        // Better to assume audio for music players.
+                        audioSrc = anim;
+                    }
                 }
             }
 
-            // DUPLICATE CHECK
-            const mediaKey = audioSrc || videoSrc;
-            if (mediaKey) {
-                if (app.seenMedia.has(mediaKey)) {
-                    // Skip duplicates
-                    return; 
+            // SMART DUPLICATE FILTER (V9.32)
+            // Filter strictly based on the MEDIA source URL, not the animation URL
+            // This prevents identical songs from loading twice, but allows unique songs
+            // that share the same visual video loop.
+            const uniqueKey = audioSrc || videoSrc;
+
+            if (uniqueKey) {
+                if (app.seenMedia.has(uniqueKey)) {
+                    // This EXACT audio/video file has already been added. Skip.
+                    return;
                 }
-                app.seenMedia.add(mediaKey);
+                app.seenMedia.add(uniqueKey);
             }
 
             let imageSrc = null;
@@ -1836,4 +1900,5 @@ document.addEventListener('pause', function(e){
 </script>
 </body>
 </html>
+
 
