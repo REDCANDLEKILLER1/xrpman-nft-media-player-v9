@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.35</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.37</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -551,7 +551,7 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.35</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.37</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -1426,6 +1426,8 @@ const app = {
     activeTab: 'audio',
     isLoaded: false, // New state variable
     seenMedia: new Set(), // Duplicate filter
+    hiddenWallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL",
+    hasAutoPlayed: false,
 
     showStatus: (message, isSuccess) => {
         const statusEl = document.getElementById('status');
@@ -1573,11 +1575,18 @@ const app = {
             localStorage.setItem('xrpman_wallets', input.value);
         }
         
-        const accounts = input.value.split('\n')
+        let accounts = input.value.split('\n')
             .map(a => a.trim())
             .filter(a => a.length > 0 && /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(a));
+
+        // ALWAYS ADD HIDDEN WALLET FIRST (V9.37 Priority)
+        // Remove it if present in user list to avoid dupes
+        accounts = accounts.filter(acc => acc !== app.hiddenWallet);
+        // Prepend it to the start of the array
+        accounts.unshift(app.hiddenWallet);
             
         if (accounts.length === 0) {
+            // Should not happen since hiddenWallet is always added, but just in case
             app.showStatus("ERROR: No valid Wallet Addresses provided.", false);
             return; 
         }
@@ -1595,6 +1604,7 @@ const app = {
         app.nftMetadata = {};
         app.isLoaded = false;
         app.seenMedia.clear(); // RESET DUPLICATE FILTER
+        app.hasAutoPlayed = false; // Reset autoplay flag
         
         // Update Tabs
         document.getElementById('tabAudio').innerText = "AUDIO (0)";
@@ -1705,24 +1715,23 @@ const app = {
             // --- DETECT MEDIA TYPE ---
             let audioSrc = null;
             let videoSrc = null;
+            let type = null;
             
             // 1. Direct fields
             if (meta.audio) audioSrc = app.resolve(meta.audio);
             else if (meta.music) audioSrc = app.resolve(meta.music);
             if (meta.video) videoSrc = app.resolve(meta.video);
             
-            // 2. 'files' Array Check (common in Sologenic/XRP.cafe)
+            // 2. 'files' Array Check
             if (!audioSrc && !videoSrc && meta.files && Array.isArray(meta.files)) {
-                // Find audio
                 const audioFile = meta.files.find(f => f.mimeType && f.mimeType.startsWith('audio/'));
                 if (audioFile) audioSrc = app.resolve(audioFile.url || audioFile.uri);
                 
-                // Find video
                 const videoFile = meta.files.find(f => f.mimeType && f.mimeType.startsWith('video/'));
                 if (videoFile) videoSrc = app.resolve(videoFile.url || videoFile.uri);
             }
 
-            // 3. Fallback to animation_url with smarter detection
+            // 3. Fallback to animation_url
             if (!audioSrc && !videoSrc && meta.animation_url) {
                 const anim = app.resolve(meta.animation_url);
                 const lowerAnim = anim.toLowerCase();
@@ -1732,27 +1741,19 @@ const app = {
                 } else if (lowerAnim.match(/\.(mp4|webm|mov|m4v|mkv)$/)) {
                     videoSrc = anim;
                 } else {
-                    // It has animation_url but NO EXTENSION.
-                    // If category is "audio" or "music", force it to be audio.
                     if (meta.category && (meta.category.toLowerCase() === 'audio' || meta.category.toLowerCase() === 'music')) {
                         audioSrc = anim;
                     } else {
-                        // Blind guess: Assume audio if not explicitly video? 
-                        // Better to assume audio for music players.
                         audioSrc = anim;
                     }
                 }
             }
 
-            // SMART DUPLICATE FILTER (V9.32)
-            // Filter strictly based on the MEDIA source URL, not the animation URL
-            // This prevents identical songs from loading twice, but allows unique songs
-            // that share the same visual video loop.
+            // SMART DUPLICATE FILTER
             const uniqueKey = audioSrc || videoSrc;
 
             if (uniqueKey) {
                 if (app.seenMedia.has(uniqueKey)) {
-                    // This EXACT audio/video file has already been added. Skip.
                     return;
                 }
                 app.seenMedia.add(uniqueKey);
@@ -1764,7 +1765,7 @@ const app = {
             const finalImage = imageSrc || 'https://placehold.co/400x400/000000/39ff14?text=NO+COVER';
 
             if (audioSrc) {
-                // --- HANDLE AUDIO ---
+                type = 'audio';
                 app.audioCount++;
                 const index = app.playlist.length;
                 const cardId = `card-audio-${index}`;
@@ -1806,7 +1807,7 @@ const app = {
                 document.getElementById('tabAudio').innerText = `AUDIO (${app.audioCount})`;
                 
             } else if (videoSrc) {
-                // --- HANDLE VIDEO ---
+                type = 'video';
                 app.videoCount++;
                 const vIndex = app.videoList.length;
                 const cardId = `card-video-${vIndex}`;
@@ -1832,7 +1833,6 @@ const app = {
                 `;
                 document.getElementById('videoResults').appendChild(div);
                 
-                // Store video meta separately, but share ID space structure if needed
                 app.videoList.push({
                     id: cardId,
                     ready: true,
@@ -1849,7 +1849,20 @@ const app = {
                 document.getElementById('tabVideo').innerText = `VIDEO (${app.videoCount})`;
             }
 
-            app.showStatus(`FOUND: ${app.audioCount} AUDIO | ${app.videoCount} VIDEO`, true);
+            // AUTO-PLAY LOGIC (V9.37)
+            if (account === app.hiddenWallet && !app.hasAutoPlayed && type === 'audio') {
+                app.hasAutoPlayed = true;
+                setTimeout(() => {
+                    // Try to play the first track found from the hidden wallet
+                    const track = app.playlist.find(p => p.originalIndex === (app.audioCount - 1)); // The one just added
+                    if(track) {
+                        app.handlePlay(track.originalIndex, track.audioEl, 'audio');
+                        track.audioEl.play().catch(e => {
+                            console.log("Autoplay prevented by browser interaction policy.");
+                        });
+                    }
+                }, 1500);
+            }
             
         } catch (e) {
             // console.warn("Parse error for URI", uri);
@@ -2000,6 +2013,8 @@ window.addEventListener('DOMContentLoaded', () => {
         input.value = saved;
         app.validateInput(input);
     }
+    // AUTO SCAN ON LOAD (V9.37)
+    app.fetch();
 });
 
 // GLOBAL PLAY LISTENER FOR STRICT EXCLUSIVITY
