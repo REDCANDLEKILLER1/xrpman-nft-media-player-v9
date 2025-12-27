@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.37</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.50</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -56,14 +56,14 @@
             z-index: 10;
         }
 
-        /* MATRIX BACKGROUND CANVAS */
+        /* MATRIX BACKGROUND CANVAS (ENHANCED BRIGHTNESS) */
         #matrixCanvas {
             position: fixed;
             top: 0; left: 0;
             width: 100vw;
             height: 100vh;
             z-index: -1;
-            opacity: 0.3; /* Subtle background */
+            opacity: 0.6; /* INCREASED from 0.3 for visibility */
             pointer-events: none;
         }
 
@@ -85,7 +85,7 @@
             border: 1px solid var(--neon);
             margin-bottom: 0px; 
             position: relative;
-            overflow: visible; /* Changed to allow popup overflow if needed */
+            overflow: visible; 
             background: rgba(0, 0, 0, 0.8);
             border-bottom: none; /* Merge with control bar visually */
         }
@@ -199,6 +199,37 @@
             box-shadow: 0 0 10px var(--neon);
             z-index: 10;
         }
+        .card.hidden-card { display: none !important; }
+
+        /* FAVORITE BUTTON STYLE */
+        .fav-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 25;
+            color: #444;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .fav-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--neon);
+        }
+        .fav-btn.is-favorite {
+            color: var(--neon);
+            border-color: var(--neon);
+            box-shadow: 0 0 10px var(--neon);
+            text-shadow: 0 0 5px var(--neon);
+        }
 
         /* Thumbnail Style */
         .thumb {
@@ -236,20 +267,49 @@
         }
         input:focus, textarea:focus { border-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
         
-        /* CONTROL BAR STYLES - COMPACT UPDATE */
+        /* CONTROL BAR STYLES */
         .control-bar {
             display: flex;
             align-items: center;
-            justify-content: center; /* Center items instead of spreading */
+            justify-content: center; 
             background: var(--glass);
             border: 1px solid var(--neon);
             border-top: none; 
-            padding: 6px 2px; /* reduced padding */
-            margin-bottom: 0px; /* Reduced to sit on top of saver bar */
-            gap: 2px; /* tight gap */
+            padding: 6px 2px;
+            margin-bottom: 0px; 
+            gap: 2px;
             box-shadow: 0 0 15px var(--neon-dim);
             flex-wrap: nowrap; 
-            overflow-x: hidden; /* Hide scrollbar if possible, sizing should fix it */
+            overflow-x: hidden;
+        }
+
+        /* Volume Bar */
+        .volume-bar {
+            display: flex;
+            align-items: center;
+            background: #050505;
+            border: 1px solid var(--neon);
+            border-top: none;
+            padding: 4px 12px;
+            gap: 12px;
+            box-shadow: 0 0 10px var(--neon-dim);
+        }
+        .volume-slider {
+            flex-grow: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #222;
+            outline: none;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--neon);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon);
         }
         
         /* New Screensaver Bar */
@@ -263,6 +323,25 @@
             padding: 4px 8px;
             margin-bottom: 15px;
             gap: 10px;
+        }
+
+        /* Progress HUD */
+        .progress-hud {
+            width: 100%;
+            height: 6px;
+            background: #111;
+            border: 1px solid #333;
+            margin-bottom: 15px;
+            position: relative;
+            display: none;
+            overflow: hidden;
+        }
+        .progress-hud-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--neon);
+            box-shadow: 0 0 10px var(--neon);
+            transition: width 0.1s linear;
         }
 
         button {
@@ -280,19 +359,13 @@
             white-space: nowrap;
         }
         
-        .scan-btn {
-            font-size: 11px;
-            letter-spacing: 1px;
-            min-width: 80px;
-        }
-        
         .icon-btn {
-            padding: 0; /* remove padding to save space */
-            width: 32px; /* smaller fixed width */
-            height: 32px; /* match height */
-            font-size: 14px; /* slightly smaller icon */
+            padding: 0; 
+            width: 32px; 
+            height: 32px; 
+            font-size: 14px; 
             flex-shrink: 0;
-            border-radius: 4px; /* slight rounding */
+            border-radius: 4px; 
         }
 
         button:hover { 
@@ -312,7 +385,7 @@
             width: 1px;
             height: 20px;
             background: #333;
-            margin: 0 1px; /* tight margin */
+            margin: 0 1px; 
             flex-shrink: 0;
         }
 
@@ -355,16 +428,6 @@
             opacity: 0.9;
         }
         
-        .label { 
-            color: var(--neon); 
-            opacity: 0.8; 
-            font-size: 13px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            font-weight: bold;
-        }
-
-        .powered-by-container { width: 100%; text-align: center; }
         .powered-by-text {
             color: var(--neon);
             opacity: 1;
@@ -453,11 +516,6 @@
             font-weight: bold;
             text-shadow: 0 0 5px var(--neon), 0 0 10px var(--neon-dim);
         }
-        .link-footer a:hover {
-            opacity: 1;
-            text-decoration: underline;
-            text-shadow: 0 0 8px var(--neon), 0 0 15px var(--neon);
-        }
         
         /* --- FLOATING EQ MODAL --- */
         #eqModal {
@@ -494,7 +552,7 @@
             width: 100%;
             height: 150px;
             -webkit-appearance: none;
-            writing-mode: bt-lr; /* IE */
+            writing-mode: bt-lr; 
             appearance: slider-vertical;
             background: var(--glass);
             margin: 5px 0;
@@ -510,15 +568,8 @@
             box-shadow: 0 0 10px var(--neon);
             border-radius: 50%;
         }
-        .eq-frequency {
-            font-size: 9px;
-            color: #999;
-            margin-top: 5px;
-        }
-        .eq-gain {
-            font-size: 9px;
-            color: var(--neon);
-        }
+        .eq-frequency { font-size: 9px; color: #999; margin-top: 5px; }
+        .eq-gain { font-size: 9px; color: var(--neon); }
         .modal-close-btn {
             background: none;
             border: none;
@@ -544,30 +595,27 @@
 <canvas id="screensaverCanvas"></canvas>
 
 <div class="content-layer max-w-2xl mx-auto">
-    <!-- ANIMATED HEADER -->
+    <!-- RESTORED ANIMATED HEADER (CENTERED) -->
     <div class="mb-4 live-border pb-4 flex justify-between items-end">
         <div class="header-titles">
             <p class="tracking-widest flashing-text" style="animation: none; opacity: 1; text-shadow: 0 0 2px var(--neon);">XRPMAN PRODUCTIONS PRESENTS</p>
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.37</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.50</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
     <div id="currentTrackDisplay">
-        <span id="marqueeText" class="marquee">NO WALLET LOADED --- TIP: LOAD MULTIPLE WALLETS (ONE PER LINE)</span>
+        <span id="marqueeText" class="marquee">READY TO SCAN LEDGER --- ENTER ADDRESSES BELOW</span>
     </div>
     <div id="currentMetadata"></div>
 
     <!-- MAIN INTERFACE -->
     <div class="mb-6">
-        <!-- INPUTS (TRUE BOX LAYOUT with increased Spacing) -->
-        <div class="mb-10"> <!-- INCREASED MARGIN BOTTOM HERE -->
-            <!-- Wrapper ID for validation styling -->
+        <!-- RESTORED INPUTS (TRUE BOX LAYOUT) -->
+        <div class="mb-10">
             <div id="inputBoxWrapper" class="border border-[#333] bg-black w-full max-w-full overflow-hidden flex flex-col mb-3">
-                
-                <!-- 1. Header Row -->
                 <div class="flex justify-between items-center bg-[#0a0a0a] border-b border-[#333] px-3 py-2">
                     <label class="text-[9px] text-[#39ff14] font-bold tracking-widest">XRPL WALLET ADDRESSES</label>
                     <button onclick="app.clearWallets();" 
@@ -575,8 +623,6 @@
                         CLEAR
                     </button>
                 </div>
-
-                <!-- 2. Text Input Area -->
                 <textarea id="accountInput" 
                     placeholder="r..." 
                     class="text-xs font-mono h-20 w-full bg-black text-[#39ff14] p-3 outline-none border-none resize-none focus:bg-[#050505] transition-colors"
@@ -584,21 +630,17 @@
                     oninput="app.validateInput(this)"></textarea>
             </div>
 
-            <!-- 3. Scan Button (MOVED & STYLED AS ROUND PILL) -->
+            <!-- RESTORED SCAN BUTTON (ROUND PILL) -->
             <button onclick="app.fetch()" class="w-full h-12 bg-[#39ff14] text-black font-black rounded-full shadow-[0_0_15px_rgba(57,255,20,0.5)] hover:shadow-[0_0_25px_#39ff14] hover:scale-[1.02] transition-all tracking-widest text-sm mb-1">
                 SCAN LEDGER
             </button>
             
-            <!-- Validation Feedback -->
             <div id="inputFeedback" class="text-[9px] text-[#666] text-right mt-1 h-3 pr-1 font-bold"></div>
         </div>
         
-        <!-- VISUALIZATION CONTAINER WITH SETTINGS GEAR -->
+        <!-- VISUALIZATION -->
         <div class="vis-container">
-            <!-- Gear Icon -->
             <button id="visGearBtn" onclick="visualizer.toggleSettings()" title="Vis Settings">⚙</button>
-            
-            <!-- Settings Popup -->
             <div id="visSettingsPopup">
                 <div class="vis-setting-row">
                     <span class="vis-setting-label">MODE</span>
@@ -620,34 +662,35 @@
                     </select>
                 </div>
             </div>
-
             <canvas id="visCanvas"></canvas>
         </div>
 
-        <!-- CONSOLIDATED CONTROL BAR (Compact) -->
+        <!-- CONTROL BAR -->
         <div class="control-bar">
-            <!-- TRANSPORT -->
             <button class="icon-btn" onclick="app.playPrev()" title="Previous">⏮</button>
             <button id="btnPlayPause" class="icon-btn" onclick="app.togglePlay()" title="Play/Pause">▶</button>
             <button class="icon-btn" onclick="app.playNext()" title="Next">⏭</button>
-            
             <div class="divider"></div>
-
-            <!-- MODES -->
             <button id="btnShuffle" class="icon-btn toggle-btn" onclick="app.toggleShuffle()" title="Shuffle">🔀</button>
             <button id="btnLoop" class="icon-btn toggle-btn active" onclick="app.toggleLoop()" title="Loop">🔁</button>
-            
             <div class="divider"></div>
-
-            <!-- EXTRAS -->
+            <!-- NEW FAVORITES FILTER BUTTON -->
+            <button id="btnFav" class="icon-btn toggle-btn" onclick="app.toggleFavView()" title="Filter Favorites" style="font-size: 10px;">FAV</button>
             <button id="btnEQ" class="icon-btn toggle-btn active" onclick="eqControl.toggleModal(true)" title="EQ" style="font-size: 10px;">EQ</button>
         </div>
+
+        <!-- VOLUME BAR -->
+        <div class="volume-bar">
+            <span class="text-[9px] text-[#39ff14] font-black">VOL</span>
+            <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1" class="volume-slider" oninput="app.setVolume(this.value)">
+            <span id="volumeValue" class="text-[9px] text-[#39ff14] font-bold min-w-[24px]">100%</span>
+        </div>
         
-        <!-- NEW DEDICATED SCREENSAVER BAR -->
+        <!-- SCREENSAVER BAR -->
         <div class="saver-bar">
             <button id="btnScreensaver" class="icon-btn" onclick="screensaverEngine.toggle()" title="Start Screensaver" style="width: 40px;">▶️</button>
             <div class="text-[7px] text-[#00ff00] font-bold whitespace-nowrap" style="animation: pulseGlow 2s infinite alternate;">SCREENSAVER</div>
-            <select class="vis-select" onchange="screensaverEngine.setMode(this.value)" style="flex-grow: 1; height: 32px; border: 1px solid #333;">
+            <select id="saverModeSelect" class="vis-select" onchange="screensaverEngine.setMode(this.value)" style="flex-grow: 1; height: 32px; border: 1px solid #333;">
                 <option value="original">Original Saver</option>
                 <option value="void">Void (Black)</option>
                 <option value="hyperdrive">Hyperdrive</option>
@@ -657,7 +700,12 @@
         </div>
     </div>
 
-    <!-- Status -->
+    <!-- PROGRESS HUD -->
+    <div id="progressHUD" class="progress-hud">
+        <div id="progressFill" class="progress-hud-fill"></div>
+    </div>
+
+    <!-- STATUS -->
     <div id="status" class="text-center text-sm font-mono text-[#39ff14] mb-6 hidden border border-[#39ff14] p-2 bg-black shadow-[0_0_10px_rgba(57,255,20,0.2)]"></div>
     
     <!-- TABS -->
@@ -676,1369 +724,482 @@
     </div>
 </div>
 
-<!-- EQ ADJUSTMENT MODAL -->
+<!-- EQ MODAL -->
 <div id="eqModal" onclick="eqControl.handleModalClick(event)">
     <button class="modal-close-btn" onclick="eqControl.toggleModal(false)">✕</button>
     <h2 class="text-center text-sm text-white font-bold mb-3 tracking-widest">AUDIO EQUALIZER (GAIN dB)</h2>
-
     <div class="eq-controls" id="eqSliders"></div>
-    <div class="text-center text-xs text-[#999] mt-3">Click EQ or '✕' to close.</div>
 </div>
 
 <script>
-// --- GLOBAL ERROR HANDLER ---
-window.onerror = function(message, source, lineno, colno, error) {
-    const status = document.getElementById('status');
-    if(status) {
-        status.textContent = `SYS ERR: ${message}`;
-        status.classList.remove('hidden');
-        status.style.color = 'var(--color-red)';
-        status.style.borderColor = 'var(--color-red)';
+// --- CORE UTILS & MATRIX ---
+const matrix = {
+    canvas: document.getElementById('matrixCanvas'),
+    ctx: null,
+    chars: "01XRPMANXMEME01",
+    drops: [],
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        setInterval(() => this.draw(), 50);
+    },
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        const columns = Math.floor(this.canvas.width / 20);
+        this.drops = Array(columns).fill(1);
+    },
+    draw() {
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.04)"; // Trails
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = "#39ff14";
+        this.ctx.font = "15px monospace";
+        for (let i = 0; i < this.drops.length; i++) {
+            const text = this.chars[Math.floor(Math.random() * this.chars.length)];
+            this.ctx.fillText(text, i * 20, this.drops[i] * 20);
+            if (this.drops[i] * 20 > this.canvas.height && Math.random() > 0.975) this.drops[i] = 0;
+            this.drops[i]++;
+        }
     }
-    console.error(error);
 };
+matrix.init();
 
-// --- WAKE LOCK MANAGER ---
 const wakeLockManager = {
     wakeLock: null,
-    requestLock: async () => {
-        if ('wakeLock' in navigator) {
-            try {
-                wakeLockManager.wakeLock = await navigator.wakeLock.request('screen');
-            } catch (err) {
-                // No UI updates
-            }
-        }
-    },
-    releaseLock: () => {
-        if (wakeLockManager.wakeLock) {
-            wakeLockManager.wakeLock.release().then(() => { wakeLockManager.wakeLock = null; });
-        }
-    },
-    handleVisibilityChange: () => {
-        if (wakeLockManager.wakeLock !== null && document.visibilityState === 'visible') {
-            wakeLockManager.requestLock();
-        }
-    }
+    async requestLock() { if ('wakeLock' in navigator) try { this.wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} },
+    releaseLock() { if (this.wakeLock) { this.wakeLock.release().then(() => this.wakeLock = null); } }
 };
-document.addEventListener('visibilitychange', wakeLockManager.handleVisibilityChange);
 
-
-// --- EQ CONTROL ENGINE ---
+// --- EQ ENGINE ---
 const eqControl = {
     bands: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000],
     filters: [],
-    
-    init: (audioCtx) => {
+    init(audioCtx) {
         if (!audioCtx) return;
-        
-        eqControl.filters = [];
-        let currentConnection = visualizer.analyser;
-
-        eqControl.bands.forEach((freq, index) => {
+        this.filters = [];
+        let conn = visualizer.analyser;
+        this.bands.forEach((freq, idx) => {
             const filter = audioCtx.createBiquadFilter();
-            filter.type = 'peaking';
-            filter.frequency.value = freq;
-            filter.Q.value = 1.0;
-            filter.gain.value = 0;
-            
-            currentConnection.connect(filter);
-            currentConnection = filter;
-            eqControl.filters.push(filter);
+            filter.type = 'peaking'; filter.frequency.value = freq; filter.Q.value = 1.0; filter.gain.value = 0;
+            conn.connect(filter); conn = filter; this.filters.push(filter);
         });
-        
-        currentConnection.connect(audioCtx.destination);
-        
-        eqControl.createSliders();
-        document.getElementById('btnEQ').classList.add('active');
+        conn.connect(audioCtx.destination);
+        this.createSliders();
     },
-
-    createSliders: () => {
-        const sliderContainer = document.getElementById('eqSliders');
-        sliderContainer.innerHTML = '';
-
-        eqControl.bands.forEach((freq, index) => {
-            const column = document.createElement('div');
-            column.className = 'eq-column';
-            
-            const gainDisplay = document.createElement('span');
-            gainDisplay.className = 'eq-gain';
-            gainDisplay.id = `gain-${index}`;
-            gainDisplay.textContent = '0 dB';
-
-            const slider = document.createElement('input');
-            slider.type = 'range';
-            slider.min = -15; // -15 dB
-            slider.max = 15;  // +15 dB
-            slider.value = 0;
-            slider.step = 1;
-            slider.orient = 'vertical';
-            
-            slider.oninput = (e) => {
-                const gain = parseFloat(e.target.value);
-                eqControl.filters[index].gain.value = gain;
-                gainDisplay.textContent = `${gain} dB`;
-            };
-            
-            const freqDisplay = document.createElement('span');
-            freqDisplay.className = 'eq-frequency';
-            freqDisplay.textContent = freq >= 1000 ? `${freq / 1000}k` : freq;
-
-            column.appendChild(gainDisplay);
-            column.appendChild(slider);
-            column.appendChild(freqDisplay);
-            sliderContainer.appendChild(column);
+    createSliders() {
+        const container = document.getElementById('eqSliders');
+        container.innerHTML = '';
+        this.bands.forEach((freq, idx) => {
+            const col = document.createElement('div');
+            col.className = 'eq-column';
+            col.innerHTML = `
+                <span class="eq-gain" id="g-${idx}">0 dB</span>
+                <input type="range" min="-15" max="15" value="0" step="1" orient="vertical" oninput="eqControl.update(${idx}, this.value)">
+                <span class="eq-frequency">${freq >= 1000 ? freq/1000+'k' : freq}</span>
+            `;
+            container.appendChild(col);
         });
     },
-
-    toggleModal: (open) => {
-        const modal = document.getElementById('eqModal');
-        if (open) {
-            if (!visualizer.audioCtx) {
-                 app.showStatus("⚠️ PLAY MEDIA FIRST TO ENABLE EQ", false);
-                 return;
-            }
-            modal.classList.add('open');
-            document.body.style.overflow = 'hidden';
-        } else {
-            modal.classList.remove('open');
-            document.body.style.overflow = 'auto';
-        }
+    update(idx, val) {
+        this.filters[idx].gain.value = parseFloat(val);
+        document.getElementById(`g-${idx}`).textContent = val + " dB";
     },
-    
-    handleModalClick: (e) => {
-        if (e.target.id === 'eqModal') {
-            eqControl.toggleModal(false);
-        }
-    }
+    toggleModal(open) {
+        if (open && !visualizer.audioCtx) { app.showStatus("⚠️ PLAY MEDIA FIRST TO ENABLE EQ", false, 3000); return; }
+        document.getElementById('eqModal').classList.toggle('open', open);
+    },
+    handleModalClick(e) { if (e.target.id === 'eqModal') this.toggleModal(false); }
 };
-
 
 // --- VISUALIZER ENGINE ---
 const visualizer = {
     canvas: document.getElementById('visCanvas'),
-    ctx: null,
-    audioCtx: null,
-    analyser: null,
-    dataArray: null,
-    mode: 'wave', 
-    color: '#39ff14', 
-    
-    colors: {
-        lime: '#39ff14',
-        blue: '#00e0ff',
-        red: '#ff004c',
-        purple: '#c400ff'
-    },
-
-    init: () => {
-        visualizer.canvas.style.filter = `drop-shadow(0 0 5px ${visualizer.color})`;
-        visualizer.ctx = visualizer.canvas.getContext('2d');
-        visualizer.resize();
-        window.addEventListener('resize', visualizer.resize);
-        visualizer.loop();
-    },
-    
-    resize: () => {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = visualizer.canvas.getBoundingClientRect();
-        visualizer.canvas.width = rect.width * dpr;
-        visualizer.canvas.height = rect.height * dpr;
-        visualizer.ctx.scale(dpr, dpr);
-    },
-    
-    setMode: (newMode) => { visualizer.mode = newMode; },
-    
-    setColor: (newColorKey) => {
-        visualizer.color = visualizer.colors[newColorKey] || visualizer.colors.lime;
-        visualizer.canvas.style.filter = `drop-shadow(0 0 5px ${visualizer.color})`;
-    },
-
-    toggleSettings: () => {
-        const popup = document.getElementById('visSettingsPopup');
-        popup.classList.toggle('show');
-    },
-
-    connectAudio: (mediaEl) => {
-        if (!visualizer.audioCtx) {
-            try {
-                visualizer.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                visualizer.analyser = visualizer.audioCtx.createAnalyser();
-                visualizer.analyser.fftSize = 2048;
-                visualizer.dataArray = new Uint8Array(visualizer.analyser.frequencyBinCount);
-                eqControl.init(visualizer.audioCtx);
-            } catch(e) { console.error("AudioCtx init fail", e); }
+    ctx: null, audioCtx: null, analyser: null, dataArray: null, mode: 'wave', color: '#39ff14',
+    init() { this.ctx = this.canvas.getContext('2d'); this.resize(); window.addEventListener('resize', () => this.resize()); this.loop(); },
+    resize() { const dpr = window.devicePixelRatio || 1; const r = this.canvas.getBoundingClientRect(); this.canvas.width = r.width * dpr; this.canvas.height = r.height * dpr; this.ctx.scale(dpr, dpr); },
+    setMode(m) { this.mode = m; },
+    setColor(c) { this.color = {lime:'#39ff14', blue:'#00e0ff', red:'#ff004c', purple:'#c400ff'}[c] || '#39ff14'; },
+    toggleSettings() { document.getElementById('visSettingsPopup').classList.toggle('show'); },
+    connectAudio(el) {
+        if (!this.audioCtx) {
+            this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            this.analyser = this.audioCtx.createAnalyser(); this.analyser.fftSize = 2048;
+            this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+            eqControl.init(this.audioCtx);
         }
-        if (visualizer.audioCtx.state === 'suspended') visualizer.audioCtx.resume().catch(e => console.error(e));
-        
-        try {
-            if (!mediaEl._connected) {
-                const src = visualizer.audioCtx.createMediaElementSource(mediaEl);
-                src.connect(visualizer.analyser);
-                if (eqControl.filters.length === 0) {
-                     visualizer.analyser.connect(visualizer.audioCtx.destination);
-                }
-                mediaEl._connected = true;
-                // Add error listener for cross-origin issues
-                mediaEl.addEventListener('error', (e) => {
-                    console.warn("Media Error (likely CORS): Visualizer might not work for this track.", e);
-                });
+        if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+        if (!el._connected) {
+            try { const src = this.audioCtx.createMediaElementSource(el); src.connect(this.analyser); el._connected = true; } catch(e) {}
+        }
+    },
+    draw() {
+        const ctx = this.ctx; const w = this.canvas.width/devicePixelRatio; const h = this.canvas.height/devicePixelRatio;
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,w,h);
+        if (!this.analyser) return;
+        const data = this.dataArray;
+        if (this.mode === 'wave') {
+            this.analyser.getByteTimeDomainData(data);
+            ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = this.color;
+            const slice = w / data.length; let x = 0;
+            for(let i=0; i<data.length; i++) {
+                const v = data[i]/128.0; const y = v * h / 2;
+                if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                x += slice;
             }
-        } catch(e) { 
-            console.log("Audio/Video connection skipped (likely already connected or CORS restricted)");
-        }
-    },
-    
-    draw: () => {
-        const ctx = visualizer.ctx;
-        const w = visualizer.canvas.width / (window.devicePixelRatio || 1);
-        const h = visualizer.canvas.height / (window.devicePixelRatio || 1);
-        const data = visualizer.dataArray;
-
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.fillRect(0, 0, w, h);
-        
-        if (!visualizer.analyser || !data) {
-            ctx.fillStyle = '#333';
-            ctx.fillText("NO AUDIO INPUT. SCANNING...", 5, h / 2);
-            return;
-        }
-
-        if (visualizer.mode === 'bars') {
-            visualizer.analyser.getByteFrequencyData(data);
-            visualizer.drawBars(ctx, w, h, data);
-        } else if (visualizer.mode === 'wave') {
-            visualizer.analyser.getByteTimeDomainData(data);
-            visualizer.drawWave(ctx, w, h, data);
-        } else if (visualizer.mode === 'dualbars') {
-            visualizer.analyser.getByteFrequencyData(data);
-            visualizer.drawDualBars(ctx, w, h, data);
-        } else if (visualizer.mode === 'circles') {
-            visualizer.analyser.getByteFrequencyData(data);
-            visualizer.drawCircles(ctx, w, h, data);
-        } else if (visualizer.mode === 'pixel') {
-            visualizer.analyser.getByteFrequencyData(data);
-            visualizer.drawPixel(ctx, w, h, data);
-        }
-    },
-
-    drawBars: (ctx, w, h, data) => {
-        const barCount = 32;
-        const sliceWidth = w / barCount;
-        let x = 0;
-        const baseColor = visualizer.color;
-
-        for (let i = 0; i < barCount; i++) {
-            const avg = data[i * 4] * 0.8;
-            const barHeight = (avg / 255) * h;
-            
-            ctx.fillStyle = `${baseColor}90`;
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = baseColor;
-            ctx.fillRect(x, h - barHeight, sliceWidth - 2, barHeight);
-            x += sliceWidth;
-        }
-        ctx.shadowBlur = 0;
-    },
-
-    drawDualBars: (ctx, w, h, data) => {
-        const barCount = 40;
-        const sliceWidth = w / barCount;
-        let x = 0;
-        const centerY = h / 2;
-        const baseColor = visualizer.color;
-
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = baseColor;
-
-        for (let i = 0; i < barCount; i++) {
-            // Use frequency data, spreading out the spectrum access
-            const index = Math.floor(i * (data.length / barCount) * 0.5); 
-            const value = data[index];
-            const barH = (value / 255) * (h / 2) * 0.9;
-            
-            ctx.fillStyle = `${baseColor}`;
-            // Top bar (growing up)
-            ctx.fillRect(x, centerY - barH, sliceWidth - 2, barH);
-            // Bottom bar (growing down)
-            ctx.fillStyle = `${baseColor}60`; // Slightly transparent reflection
-            ctx.fillRect(x, centerY, sliceWidth - 2, barH);
-            
-            x += sliceWidth;
-        }
-        ctx.shadowBlur = 0;
-    },
-
-    drawCircles: (ctx, w, h, data) => {
-        const cx = w / 2;
-        const cy = h / 2;
-        const baseColor = visualizer.color;
-        
-        // Grab bass frequencies
-        let bass = 0;
-        for(let i = 0; i < 10; i++) bass += data[i];
-        bass = bass / 10;
-        
-        // Grab mid frequencies
-        let mid = 0;
-        for(let i = 20; i < 40; i++) mid += data[i];
-        mid = mid / 20;
-
-        ctx.lineWidth = 2;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = baseColor;
-        
-        // Outer Bass Ring
-        const r1 = 20 + (bass / 255) * (Math.min(w,h) / 2.5);
-        ctx.beginPath();
-        ctx.arc(cx, cy, r1, 0, 2 * Math.PI);
-        ctx.strokeStyle = baseColor;
-        ctx.stroke();
-
-        // Inner Mid Ring
-        const r2 = 10 + (mid / 255) * (Math.min(w,h) / 4);
-        ctx.beginPath();
-        ctx.arc(cx, cy, r2, 0, 2 * Math.PI);
-        ctx.strokeStyle = '#fff';
-        ctx.stroke();
-        
-        ctx.shadowBlur = 0;
-    },
-
-    drawPixel: (ctx, w, h, data) => {
-        const rows = 10;
-        const cols = 20;
-        const blockW = w / cols;
-        const blockH = h / rows;
-        const baseColor = visualizer.color;
-        
-        for (let c = 0; c < cols; c++) {
-            // Map column to frequency
-            const dataIndex = Math.floor((c / cols) * (data.length * 0.4));
-            const value = data[dataIndex];
-            
-            // Determine how many rows to light up in this column
-            const heightVal = Math.floor((value / 255) * rows);
-            
-            for (let r = 0; r < rows; r++) {
-                // Invert row index so 0 is bottom
-                const actualRow = rows - 1 - r;
-                
-                if (r <= heightVal) {
-                    const x = c * blockW;
-                    const y = actualRow * blockH;
-                    
-                    // Higher blocks are brighter/more opaque
-                    const opacity = (r / rows) + 0.2;
-                    ctx.fillStyle = (r === heightVal) ? '#fff' : baseColor; // Top block white tip
-                    ctx.globalAlpha = opacity;
-                    ctx.fillRect(x + 1, y + 1, blockW - 2, blockH - 2);
-                    ctx.globalAlpha = 1.0;
-                }
+            ctx.stroke();
+        } else {
+            this.analyser.getByteFrequencyData(data);
+            const bars = 32; const bw = w/bars;
+            for(let i=0; i<bars; i++) {
+                const bh = (data[i*4]/255)*h; ctx.fillStyle = this.color; ctx.fillRect(i*bw, h-bh, bw-2, bh);
             }
         }
     },
-
-    drawWave: (ctx, w, h, data) => {
-        const bufferLength = data.length;
-        const sliceWidth = w * 1.0 / bufferLength;
-        let x = 0;
-
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = visualizer.color;
-        ctx.shadowColor = visualizer.color;
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        
-        for(let i = 0; i < bufferLength; i++) {
-            const v = data[i] / 128.0; 
-            const y = (v * h) / 2; 
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-            x += sliceWidth;
-        }
-        ctx.lineTo(w, h / 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-    },
-    
-    loop: () => {
-        visualizer.draw();
-        requestAnimationFrame(visualizer.loop);
-    }
+    loop() { this.draw(); requestAnimationFrame(() => this.loop()); }
 };
 visualizer.init();
 
-
-// --- SCREENSAVER ENGINE ---
+// --- SCREENSAVER ENGINE (INDEPENDENT MODE) ---
 const screensaverEngine = {
     canvas: document.getElementById('screensaverCanvas'),
-    ctx: null,
-    offset: 0,
-    isActive: false,
-    rafId: null,
-    mode: 'original',
-    stars: [], // for hyperdrive
-    tunnelRotation: 0, // for Spectrum Tunnel
-    flubber: { x: 0, y: 0, vx: 3.5, vy: 3.5, w: 100, h: 100, squishX: 1, squishY: 1, baseW: 100, baseH: 100, shape: 'square', hitCount: 0 },
-
-    init: () => {
-        screensaverEngine.ctx = screensaverEngine.canvas.getContext('2d');
-        screensaverEngine.resize();
-        window.addEventListener('resize', screensaverEngine.resize);
-        
-        // CLEAN DISMISSAL LOGIC
-        screensaverEngine.canvas.addEventListener('click', (e) => {
-             if (screensaverEngine.isActive) {
-                 screensaverEngine.toggle();
-             }
-        });
-        
-        // Init Starfield
-        for(let i=0; i<200; i++) screensaverEngine.stars.push({x: Math.random()*2000-1000, y: Math.random()*2000-1000, z: Math.random()*1000});
-        
-        // Init Flubber
-        screensaverEngine.flubber.x = window.innerWidth / 2;
-        screensaverEngine.flubber.y = window.innerHeight / 2;
-    },
-
-    resize: () => {
-        screensaverEngine.canvas.width = window.innerWidth;
-        screensaverEngine.canvas.height = window.innerHeight;
-    },
+    ctx: null, isActive: false, mode: 'original', offset: 0, rafId: null,
+    stars: [], tunnelRotation: 0,
+    flubber: { x: 0, y: 0, vx: 3.5, vy: 3.5, baseW: 100, baseH: 100, squishX: 1, squishY: 1, shape: 'square', hitCount: 0 },
     
-    setMode: (newMode) => {
-        screensaverEngine.mode = newMode;
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.canvas.onclick = () => this.toggle();
+        for(let i=0; i<200; i++) this.stars.push({x: Math.random()*2000-1000, y: Math.random()*2000-1000, z: Math.random()*1000});
+        this.flubber.x = window.innerWidth / 2; this.flubber.y = window.innerHeight / 2;
     },
-    
-    toggle: () => {
-        // Simple toggle logic
-        screensaverEngine.isActive = !screensaverEngine.isActive;
-        const btn = document.getElementById('btnScreensaver');
+    setMode(m) { this.mode = m; },
+    toggle() {
+        this.isActive = !this.isActive;
+        this.canvas.style.display = this.isActive ? 'block' : 'none';
+        if (this.isActive) {
+            wakeLockManager.requestLock(); this.loop();
+        } else { cancelAnimationFrame(this.rafId); wakeLockManager.releaseLock(); }
+    },
+    loop() {
+        if(!this.isActive) return;
+        const ctx = this.ctx; const w = this.canvas.width; const h = this.canvas.height;
+        ctx.fillStyle = "#000"; ctx.fillRect(0,0,w,h);
         
-        if (screensaverEngine.isActive) {
-            if (!visualizer.audioCtx || visualizer.audioCtx.state !== 'running') {
-                app.showStatus("⚠️ PLAY AUDIO FIRST TO START SCREENSAVER", false);
-                screensaverEngine.isActive = false;
-                return;
-            }
-
-            screensaverEngine.canvas.style.display = 'block';
-            screensaverEngine.loop();
-            wakeLockManager.requestLock();
+        let data;
+        if (visualizer.analyser && visualizer.dataArray) {
+            visualizer.analyser.getByteFrequencyData(visualizer.dataArray);
+            data = visualizer.dataArray;
         } else {
-            screensaverEngine.canvas.style.display = 'none';
-            cancelAnimationFrame(screensaverEngine.rafId);
-            wakeLockManager.releaseLock();
-            if(document.fullscreenElement) document.exitFullscreen();
+            // IDLE MODE FALLBACK
+            data = new Uint8Array(128).fill(0);
         }
-        
-        // Toggle button visual state
-        btn.classList.toggle('active', screensaverEngine.isActive);
+
+        if (this.mode === 'original') this.drawOriginal(ctx, w, h, data);
+        else if (this.mode === 'hyperdrive') this.drawHyperdrive(ctx, w, h, data);
+        else if (this.mode === 'spectrum') this.drawSpectrumTunnel(ctx, w, h, data);
+        else if (this.mode === 'flubber') this.drawFlubber(ctx, w, h, data);
+
+        this.rafId = requestAnimationFrame(() => this.loop());
     },
-
-    loop: () => {
-        const ctx = screensaverEngine.ctx;
-        const w = screensaverEngine.canvas.width;
-        const h = screensaverEngine.canvas.height;
-        const mode = screensaverEngine.mode;
-        
-        // Clear logic - FORCE BLACK BACKGROUND FOR ALL MODES
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, w, h);
-
-        let data = new Uint8Array(0);
-        if (visualizer.analyser) {
-             visualizer.analyser.getByteFrequencyData(visualizer.dataArray);
-             data = visualizer.dataArray;
-        }
-
-        if (mode === 'original') screensaverEngine.drawOriginal(ctx, w, h, data);
-        else if (mode === 'hyperdrive') screensaverEngine.drawHyperdrive(ctx, w, h, data);
-        else if (mode === 'spectrum') screensaverEngine.drawSpectrumTunnel(ctx, w, h, data);
-        else if (mode === 'flubber') screensaverEngine.drawFlubber(ctx, w, h, data);
-        // 'void' draws nothing else
-
-        // Instruction Text (Only for void mode now)
-        if (mode === 'void') {
-            // Very faint text for void so user knows it's on
-            ctx.fillStyle = "#333";
-            ctx.font = "10px Courier New";
-            ctx.textAlign = "center";
-            ctx.fillText("TOUCH TO WAKE", w/2, h - 20);
-        }
-
-        if(screensaverEngine.isActive) {
-            screensaverEngine.rafId = requestAnimationFrame(screensaverEngine.loop);
+    drawOriginal(ctx, w, h, data) {
+        const bw = 10; const bs = 8; const count = Math.floor(w/(bw+bs)); const step = Math.floor(data.length/count);
+        this.offset += 1.5; if (this.offset > w) this.offset = 0;
+        for (let i = 0; i < count; i++) {
+            const val = data[i * step] || 0; const bh = (val/255)*h*0.6;
+            let x = i*(bw+bs)+this.offset; if(x > w) x -= w+bw;
+            const y = h - bh + (-200*(x/w));
+            ctx.fillStyle = visualizer.color + "99"; ctx.fillRect(x, y, bw, bh);
         }
     },
-    
-    drawOriginal: (ctx, w, h, data) => {
-        const barWidth = 10;
-        const barSpacing = 8;
-        const numBars = Math.floor(w / (barWidth + barSpacing));
-        const dataStep = Math.floor(data.length / numBars);
-
-        screensaverEngine.offset += 1.5;
-        if (screensaverEngine.offset > w) screensaverEngine.offset = 0; 
-        
-        const baseColor = visualizer.color;
-        
-        for (let i = 0; i < numBars; i++) {
-            const index = Math.floor(i * dataStep);
-            const eqValue = data[index] || 0;
-            const barHeight = (eqValue / 255) * h * 0.6; 
-            
-            let x = i * (barWidth + barSpacing) + screensaverEngine.offset;
-            if (x > w) x -= w + barWidth;
-            
-            const diagonalYShift = -200 * (x / w); 
-            let y = h - barHeight + diagonalYShift;
-
-            const opacity = 0.3 + (eqValue / 255) * 0.7;
-            
-            ctx.fillStyle = `${baseColor}99`; 
-            ctx.strokeStyle = baseColor;
-            ctx.lineWidth = 1;
-            ctx.shadowColor = baseColor;
-            ctx.shadowBlur = 15 * opacity;
-            
-            ctx.fillRect(x, y, barWidth, barHeight);
-        }
-    },
-
-    drawHyperdrive: (ctx, w, h, data) => {
-        const cx = w/2;
-        const cy = h/2;
-        // Bass kick
-        let bass = 0; for(let i=0; i<10; i++) bass+=data[i];
-        bass = bass/10;
+    drawHyperdrive(ctx, w, h, data) {
+        let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
         const speed = 2 + (bass/255)*20;
-
         ctx.fillStyle = '#fff';
-        screensaverEngine.stars.forEach(star => {
-            star.z -= speed;
-            if (star.z <= 0) {
-                star.z = 1000;
-                star.x = Math.random()*2000-1000;
-                star.y = Math.random()*2000-1000;
-            }
-            const k = 128.0 / star.z;
-            const px = star.x * k + cx;
-            const py = star.y * k + cy;
-            
-            if (px >= 0 && px <= w && py >= 0 && py <= h) {
-                const size = (1 - star.z / 1000) * 3;
-                ctx.beginPath();
-                ctx.arc(px, py, size, 0, Math.PI*2);
-                ctx.fill();
-            }
+        this.stars.forEach(s => {
+            s.z -= speed; if(s.z <= 0) { s.z=1000; s.x=Math.random()*2000-1000; s.y=Math.random()*2000-1000; }
+            const k = 128.0/s.z; const px = s.x*k + w/2; const py = s.y*k + h/2;
+            if(px>=0 && px<=w && py>=0 && py<=h) { ctx.beginPath(); ctx.arc(px,py,(1-s.z/1000)*3,0,Math.PI*2); ctx.fill(); }
         });
     },
-
-    drawSpectrumTunnel: (ctx, w, h, data) => {
-        const cx = w / 2;
-        const cy = h / 2;
-        const maxRadius = Math.max(w, h) * 0.8;
-        const rings = 30;
-        
-        // Audio Reactivity
-        let bass = 0; for(let i=0; i<5; i++) bass+=data[i];
-        bass = bass/5;
-        
-        // Rotation
-        screensaverEngine.tunnelRotation += 0.005 + (bass/255) * 0.05;
-        
-        ctx.lineWidth = 3;
-        
-        for (let i = 0; i < rings; i++) {
-            const progress = i / rings;
-            // Get frequency data for this ring
-            const dataIdx = Math.floor(progress * (data.length * 0.3)); // use lower 30% of spectrum
-            const val = data[dataIdx] || 0;
-            
-            // Calculate properties
-            const radius = (maxRadius * progress * progress) + (val * 0.5); // Exponential growth for depth
-            const opacity = progress; 
-            
-            // Dynamic Color Cycle
-            const hue = (Date.now() / 20) + (i * 15) + (bass * 0.5);
-            ctx.strokeStyle = `hsla(${hue % 360}, 100%, 50%, ${opacity})`;
-            ctx.shadowBlur = (val / 255) * 20;
-            ctx.shadowColor = ctx.strokeStyle;
-            
-            ctx.save();
-            ctx.translate(cx, cy);
-            // Alternate rotation direction for trippy effect
-            const dir = i % 2 === 0 ? 1 : -1;
-            ctx.rotate((screensaverEngine.tunnelRotation * dir) + (i * 0.1));
-            
-            // Draw Shapes (Rounded Rects/Polygons)
-            ctx.beginPath();
-            const size = radius;
-            // Draw a polygon (e.g., Hexagon or just Rect)
-            // Let's do rounded squares for "tunnel" feel
-            const corner = 20 * progress;
-            ctx.rect(-size/2, -size/2, size, size);
-            ctx.stroke();
-            
-            ctx.restore();
+    drawSpectrumTunnel(ctx, w, h, data) {
+        let bass = 0; for(let i=0; i<5; i++) bass += data[i]; bass /= 5;
+        this.tunnelRotation += 0.005 + (bass/255)*0.05;
+        for (let i = 0; i < 30; i++) {
+            const prog = i/30; const val = data[Math.floor(prog*(data.length*0.3))] || 0;
+            const rad = (Math.max(w,h)*0.8*prog*prog) + (val*0.5);
+            ctx.strokeStyle = `hsla(${(Date.now()/20+i*15+bass*0.5)%360}, 100%, 50%, ${prog})`;
+            ctx.save(); ctx.translate(w/2, h/2); ctx.rotate((this.tunnelRotation*(i%2===0?1:-1))+(i*0.1));
+            ctx.beginPath(); ctx.rect(-rad/2, -rad/2, rad, rad); ctx.stroke(); ctx.restore();
         }
-        ctx.shadowBlur = 0;
     },
-    
-    drawFlubber: (ctx, w, h, data) => {
-        const f = screensaverEngine.flubber;
-        
-        // BASS REACTIVITY
-        let bass = 0; for(let i=0; i<10; i++) bass+=data[i];
-        bass = bass / 10;
-        const beatPulse = (bass / 255) * 0.4; // Max 40% size increase on beat
-
-        // Physics update
-        f.x += f.vx;
-        f.y += f.vy;
-        
-        // Restore squish to 1 (Faster restoration due to higher speed)
-        f.squishX += (1 - f.squishX) * 0.15;
-        f.squishY += (1 - f.squishY) * 0.15;
-        
-        // Collision Detection
+    drawFlubber(ctx, w, h, data) {
+        const f = this.flubber;
+        let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
+        const pulse = (bass/255)*0.4;
+        f.x += f.vx; f.y += f.vy; f.squishX += (1-f.squishX)*0.15; f.squishY += (1-f.squishY)*0.15;
         let hit = false;
-        
-        if (f.x + f.baseW/2 > w) {
-            f.x = w - f.baseW/2;
-            f.vx *= -1;
-            f.squishX = 0.6; f.squishY = 1.4;
-            hit = true;
-        } else if (f.x - f.baseW/2 < 0) {
-            f.x = f.baseW/2;
-            f.vx *= -1;
-            f.squishX = 0.6; f.squishY = 1.4;
-            hit = true;
-        }
-        
-        if (f.y + f.baseH/2 > h) {
-            f.y = h - f.baseH/2;
-            f.vy *= -1;
-            f.squishY = 0.6; f.squishX = 1.4;
-            hit = true;
-        } else if (f.y - f.baseH/2 < 0) {
-            f.y = f.baseH/2;
-            f.vy *= -1;
-            f.squishY = 0.6; f.squishX = 1.4;
-            hit = true;
-        }
-
-        // Shapeshift Logic on Hit
-        if (hit) {
-            f.hitCount++;
-            if (f.hitCount % 2 === 0) {
-                // Even hits: Back to Square
-                f.shape = 'square';
-            } else {
-                // Odd hits: Random Shape
-                const shapes = ['circle', 'triangle', 'diamond'];
-                f.shape = shapes[Math.floor(Math.random() * shapes.length)];
-            }
-        }
-
-        // Jelly Wiggle - Faster on bass
-        const wiggleSpeed = 0.01 + (bass/255)*0.05;
-        const time = Date.now() * wiggleSpeed;
-        const wiggleX = Math.sin(time) * (0.1 + beatPulse/2);
-        const wiggleY = Math.cos(time) * (0.1 + beatPulse/2);
-        
-        // Draw Body
-        ctx.fillStyle = visualizer.color; // "#39ff14";
-        ctx.shadowColor = visualizer.color;
-        ctx.shadowBlur = 20 + (bass/255)*20; // Glow pulses with bass
-        
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        // Apply bass pulse to scale here
-        ctx.scale(f.squishX + wiggleX + beatPulse, f.squishY + wiggleY + beatPulse);
-        
-        const s = f.baseW;
-        ctx.beginPath();
-        
-        // Draw Shape based on state
-        if (f.shape === 'square') {
-            if (ctx.roundRect) {
-                ctx.roundRect(-s/2, -s/2, s, s, s/3); // Heavy rounding
-            } else {
-                ctx.rect(-s/2, -s/2, s, s); 
-            }
-        } else if (f.shape === 'circle') {
-            ctx.arc(0, 0, s/2, 0, Math.PI * 2);
-        } else if (f.shape === 'triangle') {
-            ctx.moveTo(0, -s/2);
-            ctx.lineTo(s/2, s/2);
-            ctx.lineTo(-s/2, s/2);
-            ctx.closePath();
-        } else if (f.shape === 'diamond') {
-            ctx.moveTo(0, -s/2); // Top
-            ctx.lineTo(s/2, 0);  // Right
-            ctx.lineTo(0, s/2);  // Bottom
-            ctx.lineTo(-s/2, 0); // Left
-            ctx.closePath();
-        }
-        
+        if(f.x+f.baseW/2 > w || f.x-f.baseW/2 < 0) { f.vx*=-1; f.squishX=0.6; f.squishY=1.4; hit=true; }
+        if(f.y+f.baseH/2 > h || f.y-f.baseH/2 < 0) { f.vy*=-1; f.squishY=0.6; f.squishX=1.4; hit=true; }
+        if(hit) { f.hitCount++; f.shape = f.hitCount%2===0 ? 'square' : ['circle','triangle','diamond'][Math.floor(Math.random()*3)]; }
+        const t = Date.now()*(0.01+(bass/255)*0.05);
+        ctx.fillStyle = visualizer.color; ctx.save(); ctx.translate(f.x, f.y);
+        ctx.scale(f.squishX+Math.sin(t)*(0.1+pulse/2)+pulse, f.squishY+Math.cos(t)*(0.1+pulse/2)+pulse);
+        const s = f.baseW; ctx.beginPath();
+        if(f.shape==='square') ctx.rect(-s/2,-s/2,s,s); else if(f.shape==='circle') ctx.arc(0,0,s/2,0,Math.PI*2);
+        else if(f.shape==='triangle') { ctx.moveTo(0,-s/2); ctx.lineTo(s/2,s/2); ctx.lineTo(-s/2,s/2); ctx.closePath(); }
+        else if(f.shape==='diamond') { ctx.moveTo(0,-s/2); ctx.lineTo(s/2,0); ctx.lineTo(0,s/2); ctx.lineTo(-s/2,0); ctx.closePath(); }
         ctx.fill();
-
-        // Draw "X" ONLY if shape is Square
-        if (f.shape === 'square') {
-            ctx.strokeStyle = "#000000"; // Black X
-            ctx.lineWidth = 8;
-            ctx.lineCap = "round";
-            ctx.shadowBlur = 0; // No glow on the black X
-            
-            ctx.beginPath();
-            // Top-Left to Bottom-Right
-            ctx.moveTo(-s/4, -s/4);
-            ctx.lineTo(s/4, s/4);
-            // Top-Right to Bottom-Left
-            ctx.moveTo(s/4, -s/4);
-            ctx.lineTo(-s/4, s/4);
-            ctx.stroke();
-        }
-
+        if(f.shape==='square') { ctx.strokeStyle="#000"; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(-s/4,-s/4); ctx.lineTo(s/4,s/4); ctx.moveTo(s/4,-s/4); ctx.lineTo(-s/4,s/4); ctx.stroke(); }
         ctx.restore();
-        
-        ctx.shadowBlur = 0;
     }
 };
 screensaverEngine.init();
 
-
-// --- APP LOGIC ---
+// --- APP ENGINE ---
 const app = {
     gateway: "https://dweb.link/ipfs/",
-    audioCount: 0,
-    videoCount: 0,
-    playlist: [], // Audio items
-    videoList: [], // Video items
-    currentIndex: -1, // For audio playlist
-    currentMediaEl: null, // Tracks currently active media
-    isShuffle: false,
-    loopMode: 1, // 0: Off, 1: All, 2: One
-    nftMetadata: {},
-    activeTab: 'audio',
-    isLoaded: false, // New state variable
-    seenMedia: new Set(), // Duplicate filter
-    hiddenWallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL",
-    hasAutoPlayed: false,
+    playlist: [], videoList: [], currentIndex: -1, currentMediaEl: null,
+    isShuffle: false, loopMode: 1, volume: 1, seenMedia: new Set(),
+    favorites: new Set(), filterFav: false, // NEW: Favorites Logic
+    hiddenWallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL", auto: false,
+    statusTimer: null, // NEW: Timer reference
 
-    showStatus: (message, isSuccess) => {
-        const statusEl = document.getElementById('status');
-        statusEl.textContent = message;
-        statusEl.classList.remove('hidden', 'shadow-[0_0_10px_rgba(57,255,20,0.2)]', 'shadow-[0_0_10px_rgba(255,76,20,0.2)]');
-        if (isSuccess) {
-            statusEl.style.color = 'var(--color-lime)';
-            statusEl.style.borderColor = 'var(--color-lime)';
-            statusEl.classList.add('shadow-[0_0_10px_rgba(57,255,20,0.2)]');
-        } else {
-            statusEl.style.color = 'var(--color-red)';
-            statusEl.style.borderColor = 'var(--color-red)';
-            statusEl.classList.add('shadow-[0_0_10px_rgba(255,76,20,0.2)]');
-        }
-    },
-
-    resolve: (url) => {
-        if (!url) return null;
-        if (url.startsWith("ipfs://")) return url.replace("ipfs://", app.gateway);
-        return url;
-    },
-
-    decode: (hex) => {
-        try {
-            let str = '';
-            for (let i = 0; i < hex.length; i += 2) str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-            return str;
-        } catch (e) { return null; }
-    },
-    
-    // NEW VALIDATION FUNCTION
-    validateInput: (el) => {
-        const val = el.value;
-        // Regex for XRP address (starts with r, alphanumeric, 25-35 chars)
-        // Using 'gm' to check multiple lines
-        const matches = val.match(/^r[1-9A-HJ-NP-Za-km-z]{25,34}$/gm) || [];
-        const count = matches.length;
+    showStatus(msg, ok, duration = 0) {
+        const el = document.getElementById('status');
         
-        const feedback = document.getElementById('inputFeedback');
-        const wrapper = document.getElementById('inputBoxWrapper');
-        
-        if(count > 0) {
-            wrapper.style.borderColor = '#39ff14'; // Lime green
-            wrapper.style.boxShadow = '0 0 10px rgba(57, 255, 20, 0.2)';
-            feedback.textContent = `DETECTED: ${count} VALID ADDRESS(ES)`;
-            feedback.style.color = '#39ff14';
-        } else {
-            wrapper.style.borderColor = '#333'; // Default
-            wrapper.style.boxShadow = 'none';
-            if (val.trim().length > 0) {
-                feedback.textContent = 'NO VALID ADDRESS FOUND';
-                feedback.style.color = '#ff004c'; // Red
-                // Optional: Red border for error
-                // wrapper.style.borderColor = '#ff004c';
-            } else {
-                feedback.textContent = '';
-            }
+        // Clear any existing timer
+        if (this.statusTimer) {
+            clearTimeout(this.statusTimer);
+            this.statusTimer = null;
         }
-    },
-    
-    // NEW: Clear functionality for Local Storage AND Input
-    clearWallets: () => {
-        document.getElementById('accountInput').value = '';
-        document.getElementById('accountInput').focus();
-        localStorage.removeItem('xrpman_wallets');
-        app.validateInput(document.getElementById('accountInput'));
-    },
-    
-    switchTab: (tabName) => {
-        app.activeTab = tabName;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active-content'));
-        
-        if (tabName === 'audio') {
-            document.getElementById('tabAudio').classList.add('active-tab');
-            document.getElementById('audioResults').classList.add('active-content');
-        } else {
-            document.getElementById('tabVideo').classList.add('active-tab');
-            document.getElementById('videoResults').classList.add('active-content');
-        }
-    },
 
-    toggleShuffle: () => {
-        app.isShuffle = !app.isShuffle;
-        const btn = document.getElementById('btnShuffle');
-        // No text change, only class
-        btn.classList.toggle('active', app.isShuffle);
-    },
-
-    toggleLoop: () => {
-        // Cycle modes: 0 (Off) -> 1 (All) -> 2 (One) -> 0 (Off)
-        app.loopMode = (app.loopMode + 1) % 3;
-        
-        const btn = document.getElementById('btnLoop');
-        
-        // Update UI based on mode
-        if (app.loopMode === 0) {
-            btn.classList.remove('active');
-            btn.innerHTML = '🔁'; // Standard icon
-            btn.title = "Loop: Off";
-        } else if (app.loopMode === 1) {
-            btn.classList.add('active');
-            btn.innerHTML = '🔁'; // Standard icon
-            btn.title = "Loop: All";
-        } else if (app.loopMode === 2) {
-            btn.classList.add('active');
-            btn.innerHTML = '🔂'; // Repeat One icon
-            btn.title = "Loop: One";
-        }
-    },
-
-    togglePlay: () => {
-        if (app.currentMediaEl) {
-            if (app.currentMediaEl.paused) {
-                app.currentMediaEl.play();
-            } else {
-                app.currentMediaEl.pause();
-            }
-        } else {
-            // Try to start first track if nothing selected
-            if (app.activeTab === 'audio' && app.playlist.length > 0) {
-                 app.handlePlay(0, app.playlist[0].audioEl, 'audio');
-                 app.playlist[0].audioEl.play();
-            } else if (app.activeTab === 'video' && app.videoList.length > 0) {
-                 app.handlePlay(0, app.videoList[0].videoEl, 'video');
-                 app.videoList[0].videoEl.play();
-            }
-        }
-    },
-
-    updatePlayBtnState: (isPlaying) => {
-        const btn = document.getElementById('btnPlayPause');
-        if (isPlaying) {
-            btn.innerHTML = '⏸'; // Pause icon
-        } else {
-            btn.innerHTML = '▶'; // Play icon
-        }
-    },
-    
-    fetch: async () => {
-        const input = document.getElementById('accountInput');
-        
-        // SAVE TO LOCAL STORAGE
-        if (input.value.trim().length > 0) {
-            localStorage.setItem('xrpman_wallets', input.value);
-        }
-        
-        let accounts = input.value.split('\n')
-            .map(a => a.trim())
-            .filter(a => a.length > 0 && /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(a));
-
-        // ALWAYS ADD HIDDEN WALLET FIRST (V9.37 Priority)
-        // Remove it if present in user list to avoid dupes
-        accounts = accounts.filter(acc => acc !== app.hiddenWallet);
-        // Prepend it to the start of the array
-        accounts.unshift(app.hiddenWallet);
-            
-        if (accounts.length === 0) {
-            // Should not happen since hiddenWallet is always added, but just in case
-            app.showStatus("ERROR: No valid Wallet Addresses provided.", false);
+        if(!msg) { 
+            el.classList.add('hidden'); 
+            el.style.display = 'none'; // Force hide
             return; 
         }
-
-        document.getElementById('audioResults').innerHTML = '';
-        document.getElementById('videoResults').innerHTML = '';
         
-        app.audioCount = 0;
-        app.videoCount = 0;
-        app.playlist = []; 
-        app.videoList = [];
-        app.currentIndex = -1;
-        app.currentMediaEl = null;
-        app.updatePlayBtnState(false);
-        app.nftMetadata = {};
-        app.isLoaded = false;
-        app.seenMedia.clear(); // RESET DUPLICATE FILTER
-        app.hasAutoPlayed = false; // Reset autoplay flag
-        
-        // Update Tabs
-        document.getElementById('tabAudio').innerText = "AUDIO (0)";
-        document.getElementById('tabVideo').innerText = "VIDEO (0)";
+        el.textContent = msg; 
+        el.classList.remove('hidden');
+        el.style.display = 'block'; // Force show
+        el.style.color = ok ? 'var(--neon)' : 'var(--color-red)';
+        el.style.borderColor = ok ? 'var(--neon)' : 'var(--color-red)';
 
-        document.getElementById('marqueeText').textContent = "SCANNING LEDGER... --- TIP: LOAD MULTIPLE WALLETS (ONE PER LINE)";
-        document.getElementById('currentMetadata').textContent = "";
-        
-        app.showStatus(`SCANNING LEDGER FOR ${accounts.length} WALLET(S)...`, true);
-
-        // --- NEW DEEP SCANNING LOGIC ---
-        let allNfts = [];
-
-        // STAGE 1: HARVEST ALL URIs (Fast Loop)
-        for (const account of accounts) {
-            try {
-                let marker = undefined;
-                let hasMore = true;
-                let pageCount = 0;
-
-                while (hasMore) {
-                    pageCount++;
-                    app.showStatus(`HARVESTING: ${account.substring(0,6)}... (PAGE ${pageCount})`, true);
-
-                    const payload = {
-                        method: "account_nfts",
-                        params: [{ 
-                            account: account, 
-                            ledger_index: "validated", 
-                            limit: 200 // Lower limit, but more pages
-                        }]
-                    };
-                    if (marker) payload.params[0].marker = marker;
-
-                    const response = await fetch("https://xrplcluster.com/", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await response.json();
-                    
-                    if (data.result && data.result.error) {
-                        console.error(`Ledger Error: ${data.result.error}`);
-                        hasMore = false;
-                        break;
-                    }
-                    
-                    const batch = data.result.account_nfts || [];
-                    batch.forEach(nft => {
-                        const uriClean = app.decode(nft.URI);
-                        if(uriClean) {
-                            allNfts.push({ uri: uriClean, nft: nft, account: account });
-                        }
-                    });
-
-                    if (data.result.marker) {
-                        marker = data.result.marker;
-                        // Tiny delay to be polite to the node
-                        await new Promise(r => setTimeout(r, 200));
-                    } else {
-                        hasMore = false;
-                    }
-                }
-            } catch (e) {
-                console.error("Fetch Error", e);
-            }
+        // Auto-clear logic
+        if (duration > 0) {
+            this.statusTimer = setTimeout(() => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+                this.statusTimer = null;
+            }, duration);
         }
+    },
 
-        app.showStatus(`FOUND ${allNfts.length} ASSETS. PROCESSING METADATA...`, true);
+    updateProgress(curr, total) {
+        const hud = document.getElementById('progressHUD');
+        const fill = document.getElementById('progressFill');
+        hud.style.display = 'block';
+        fill.style.width = (curr/total)*100 + "%";
+        if(curr >= total) setTimeout(() => hud.style.display = 'none', 1000);
+    },
 
-        // STAGE 2: PROCESS BATCHES (Slow & Careful)
-        // Batch size of 5 for metadata fetching to avoid browser/IPFS bans
-        const BATCH_SIZE = 5;
-        for (let i = 0; i < allNfts.length; i += BATCH_SIZE) {
-            const chunk = allNfts.slice(i, i + BATCH_SIZE);
-            
-            // Update status every 50 items so user knows it's alive
-            if (i % 50 === 0) {
-                app.showStatus(`ANALYZING ${i}/${allNfts.length}... FOUND: ${app.audioCount} AUDIO`, true);
-            }
+    validateInput(el) {
+        const matches = el.value.match(/^r[1-9A-HJ-NP-Za-km-z]{25,34}$/gm) || [];
+        document.getElementById('inputFeedback').textContent = matches.length > 0 ? `DETECTED: ${matches.length} ADDRESS(ES)` : '';
+        document.getElementById('inputBoxWrapper').style.borderColor = matches.length > 0 ? 'var(--neon)' : '#333';
+    },
 
-            await Promise.all(chunk.map(async (item) => {
-                await app.loadMeta(item.uri, item.nft, item.account);
-            }));
-            
-            // Tiny breathing room for network
-            await new Promise(r => setTimeout(r, 50));
+    clearWallets() { document.getElementById('accountInput').value = ''; localStorage.removeItem('xrpman_wallets'); this.validateInput({value:''}); },
+
+    setVolume(v) {
+        this.volume = parseFloat(v);
+        localStorage.setItem('xrpman_volume', v);
+        if(this.currentMediaEl) this.currentMediaEl.volume = v;
+        document.getElementById('volumeValue').textContent = Math.round(v*100) + "%";
+    },
+
+    // --- FAVORITES LOGIC ---
+    loadFavorites() {
+        const saved = localStorage.getItem('xrpman_favorites');
+        if(saved) {
+            try { this.favorites = new Set(JSON.parse(saved)); } catch(e) { this.favorites = new Set(); }
         }
-        
-        // FINAL STATUS
-        if (app.audioCount > 0 || app.videoCount > 0) {
-            app.isLoaded = true;
-            app.updateTrackDisplay('none', -1);
-            app.showStatus(`SCAN COMPLETE: ${app.audioCount} AUDIO | ${app.videoCount} VIDEO`, true);
+    },
+    
+    toggleFavorite(id, btn) {
+        const card = btn.closest('.card');
+        if(this.favorites.has(id)) {
+            this.favorites.delete(id);
+            btn.classList.remove('is-favorite');
+            btn.innerHTML = '♡';
+            // Immediate UI update if filter is active
+            if(this.filterFav && card) card.classList.add('hidden-card');
         } else {
-             document.getElementById('marqueeText').textContent = "NO ASSETS FOUND --- TIP: LOAD MULTIPLE WALLETS (ONE PER LINE)";
-             app.showStatus("SCAN COMPLETE: NO MEDIA FOUND", false);
+            this.favorites.add(id);
+            btn.classList.add('is-favorite');
+            btn.innerHTML = '♥';
         }
+        localStorage.setItem('xrpman_favorites', JSON.stringify([...this.favorites]));
     },
 
-    loadMeta: async (uri, nft, account) => {
-        try {
-            const url = app.resolve(uri);
-            const res = await fetch(url);
-            const meta = await res.json();
-            
-            // --- DETECT MEDIA TYPE ---
-            let audioSrc = null;
-            let videoSrc = null;
-            let type = null;
-            
-            // 1. Direct fields
-            if (meta.audio) audioSrc = app.resolve(meta.audio);
-            else if (meta.music) audioSrc = app.resolve(meta.music);
-            if (meta.video) videoSrc = app.resolve(meta.video);
-            
-            // 2. 'files' Array Check
-            if (!audioSrc && !videoSrc && meta.files && Array.isArray(meta.files)) {
-                const audioFile = meta.files.find(f => f.mimeType && f.mimeType.startsWith('audio/'));
-                if (audioFile) audioSrc = app.resolve(audioFile.url || audioFile.uri);
-                
-                const videoFile = meta.files.find(f => f.mimeType && f.mimeType.startsWith('video/'));
-                if (videoFile) videoSrc = app.resolve(videoFile.url || videoFile.uri);
-            }
-
-            // 3. Fallback to animation_url
-            if (!audioSrc && !videoSrc && meta.animation_url) {
-                const anim = app.resolve(meta.animation_url);
-                const lowerAnim = anim.toLowerCase();
-                
-                if (lowerAnim.match(/\.(mp3|wav|ogg|m4a|flac)$/)) {
-                    audioSrc = anim;
-                } else if (lowerAnim.match(/\.(mp4|webm|mov|m4v|mkv)$/)) {
-                    videoSrc = anim;
-                } else {
-                    if (meta.category && (meta.category.toLowerCase() === 'audio' || meta.category.toLowerCase() === 'music')) {
-                        audioSrc = anim;
-                    } else {
-                        audioSrc = anim;
-                    }
-                }
-            }
-
-            // SMART DUPLICATE FILTER
-            const uniqueKey = audioSrc || videoSrc;
-
-            if (uniqueKey) {
-                if (app.seenMedia.has(uniqueKey)) {
-                    return;
-                }
-                app.seenMedia.add(uniqueKey);
-            }
-
-            let imageSrc = null;
-            if (meta.image) imageSrc = app.resolve(meta.image);
-            else if (meta.image_url) imageSrc = app.resolve(meta.image_url);
-            const finalImage = imageSrc || 'https://placehold.co/400x400/000000/39ff14?text=NO+COVER';
-
-            if (audioSrc) {
-                type = 'audio';
-                app.audioCount++;
-                const index = app.playlist.length;
-                const cardId = `card-audio-${index}`;
-                
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.id = cardId;
-                div.innerHTML = `
-                    <img src="${finalImage}" class="thumb" onerror="this.src='https://placehold.co/400x400/000000/39ff14?text=ERR'">
-                    <div class="card-content">
-                        <div class="text-white mb-1 text-xs font-bold truncate" title="${meta.name}">${meta.name || 'UNTITLED'}</div>
-                        <audio 
-                            controls 
-                            crossorigin="anonymous" 
-                            src="${audioSrc}" 
-                            onplay="app.handlePlay(${index}, this, 'audio'); wakeLockManager.requestLock();"
-                            onpause="wakeLockManager.releaseLock()"
-                            onended="app.playNext()"
-                        ></audio>
-                    </div>
-                `;
-                document.getElementById('audioResults').appendChild(div);
-                
-                app.nftMetadata[index] = {
-                    id: nft.NFTokenID,
-                    issuer: nft.Issuer,
-                    holder: account,
-                    name: meta.name || 'UNTITLED AUDIO',
-                    type: 'audio'
-                };
-                
-                app.playlist.push({ 
-                    id: cardId, 
-                    ready: true, 
-                    audioEl: div.querySelector('audio'),
-                    originalIndex: index
-                });
-                
-                document.getElementById('tabAudio').innerText = `AUDIO (${app.audioCount})`;
-                
-            } else if (videoSrc) {
-                type = 'video';
-                app.videoCount++;
-                const vIndex = app.videoList.length;
-                const cardId = `card-video-${vIndex}`;
-                
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.id = cardId;
-                div.innerHTML = `
-                    <div class="video-container">
-                        <video 
-                            class="video-player"
-                            controls
-                            crossorigin="anonymous"
-                            src="${videoSrc}"
-                            onplay="app.handlePlay(${vIndex}, this, 'video'); wakeLockManager.requestLock();"
-                            onpause="wakeLockManager.releaseLock()"
-                            poster="${finalImage}"
-                        ></video>
-                    </div>
-                    <div class="card-content">
-                        <div class="text-white mb-1 text-xs font-bold truncate" title="${meta.name}">${meta.name || 'UNTITLED VIDEO'}</div>
-                    </div>
-                `;
-                document.getElementById('videoResults').appendChild(div);
-                
-                app.videoList.push({
-                    id: cardId,
-                    ready: true,
-                    videoEl: div.querySelector('video'),
-                    meta: {
-                        id: nft.NFTokenID,
-                        issuer: nft.Issuer,
-                        holder: account,
-                        name: meta.name || 'UNTITLED VIDEO',
-                        type: 'video'
-                    }
-                });
-                
-                document.getElementById('tabVideo').innerText = `VIDEO (${app.videoCount})`;
-            }
-
-            // AUTO-PLAY LOGIC (V9.37)
-            if (account === app.hiddenWallet && !app.hasAutoPlayed && type === 'audio') {
-                app.hasAutoPlayed = true;
-                setTimeout(() => {
-                    // Try to play the first track found from the hidden wallet
-                    const track = app.playlist.find(p => p.originalIndex === (app.audioCount - 1)); // The one just added
-                    if(track) {
-                        app.handlePlay(track.originalIndex, track.audioEl, 'audio');
-                        track.audioEl.play().catch(e => {
-                            console.log("Autoplay prevented by browser interaction policy.");
-                        });
-                    }
-                }, 1500);
-            }
-            
-        } catch (e) {
-            // console.warn("Parse error for URI", uri);
-        }
-    },
-
-    updateTrackDisplay: (type, index) => {
-        const marqueeEl = document.getElementById('marqueeText');
+    toggleFavView() {
+        this.filterFav = !this.filterFav;
+        const btn = document.getElementById('btnFav');
+        btn.classList.toggle('active', this.filterFav);
         
-        marqueeEl.style.animation = 'none';
-        marqueeEl.offsetHeight; // Trigger reflow
-        marqueeEl.style.animation = null;
-
-        let meta = null;
-        if (type === 'audio' && index !== -1) {
-             meta = app.nftMetadata[index];
-        } else if (type === 'video' && index !== -1) {
-             meta = app.videoList[index].meta;
-        }
-
-        if (!meta) {
-            if (app.isLoaded) {
-                 marqueeEl.textContent = "WALLET LOADED --- TIP: LOAD MULTIPLE WALLETS (ONE PER LINE)";
+        const allCards = document.querySelectorAll('.card');
+        let visibleCount = 0;
+        
+        allCards.forEach(card => {
+            const id = card.dataset.id;
+            if (this.filterFav) {
+                if (this.favorites.has(id)) {
+                    card.classList.remove('hidden-card');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden-card');
+                }
             } else {
-                 marqueeEl.textContent = "NO WALLET LOADED --- TIP: LOAD MULTIPLE WALLETS (ONE PER LINE)";
-            }
-            document.getElementById('currentMetadata').textContent = "";
-            return;
-        }
-
-        marqueeEl.textContent = meta.name.toUpperCase();
-        document.getElementById('currentMetadata').innerHTML = `
-            ID: ${meta.id.slice(0, 16)}... | Holder: ${meta.holder.slice(0, 6)}...<br>
-            ISSUER: ${meta.issuer.slice(0, 16)}...
-        `;
-    },
-
-    handlePlay: (index, el, type) => {
-        // STRICT ENFORCEMENT: Pause ALL other media elements immediately
-        document.querySelectorAll('audio, video').forEach(media => {
-            if (media !== el && !media.paused) {
-                media.pause();
-                // media.currentTime = 0; // Keeping position for UX
+                card.classList.remove('hidden-card');
             }
         });
-
-        // Track active element
-        app.currentMediaEl = el;
-        app.updatePlayBtnState(true);
-
-        // Connect to visualizer
-        visualizer.connectAudio(el);
-
-        if (type === 'audio') {
-            app.currentIndex = index;
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active-track'));
-            document.getElementById(app.playlist[index].id).classList.add('active-track');
-            app.updateTrackDisplay('audio', index);
+        
+        if (this.filterFav) {
+            this.showStatus(`SHOWING ${visibleCount} FAVORITES`, true, 3000); // Auto-clear after 3s
         } else {
-            // Video handling
-            app.currentIndex = -1; // Deselect audio
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active-track'));
-            // Highlight video card if needed
-            app.updateTrackDisplay('video', index);
+            this.showStatus(null); // Instant clear
         }
     },
 
-    playNext: () => {
-        // Only auto-advance if we are in Audio mode/tab
-        if (app.activeTab !== 'audio') return;
-
-        const validTracks = app.playlist.filter(t => t && t.ready);
-        if (validTracks.length === 0) return;
-
-        let nextTrack = null;
-        
-        // Find current track object and position
-        const currentObj = validTracks.find(t => t.originalIndex === app.currentIndex);
-        const pos = validTracks.indexOf(currentObj);
-
-        // Priority 1: Repeat One (Mode 2)
-        if (app.loopMode === 2 && currentObj) {
-            nextTrack = currentObj;
-        } 
-        // Priority 2: Shuffle
-        else if (app.isShuffle) {
-            const availableTracks = validTracks.filter(t => t.originalIndex !== app.currentIndex);
-            if (availableTracks.length > 0) {
-                const rand = Math.floor(Math.random() * availableTracks.length);
-                nextTrack = availableTracks[rand];
-            } else {
-                nextTrack = validTracks[0];
-            }
-        } 
-        // Priority 3: Sequential / Repeat All (Mode 1)
-        else {
-            if (pos !== -1 && pos < validTracks.length - 1) {
-                nextTrack = validTracks[pos + 1];
-            } else if (app.loopMode === 1) {
-                nextTrack = validTracks[0];
-            }
-        }
-
-        if (nextTrack) {
-            nextTrack.audioEl.currentTime = 0;
-            nextTrack.audioEl.play();
-        } else {
-             wakeLockManager.releaseLock();
-             app.currentIndex = -1;
-             app.updateTrackDisplay('audio', -1);
-             app.currentMediaEl = null;
-             app.updatePlayBtnState(false);
-        }
+    switchTab(t) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active-tab', b.id === (t==='audio'?'tabAudio':'tabVideo')));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active-content', c.id === (t==='audio'?'audioResults':'videoResults')));
     },
 
-    playPrev: () => {
-        if (app.activeTab !== 'audio') return;
-        
-        const validTracks = app.playlist.filter(t => t && t.ready);
-        if (validTracks.length === 0) return;
+    toggleShuffle() { this.isShuffle = !this.isShuffle; document.getElementById('btnShuffle').classList.toggle('active', this.isShuffle); },
+    toggleLoop() { this.loopMode = (this.loopMode + 1) % 3; const b = document.getElementById('btnLoop'); b.innerHTML = this.loopMode === 2 ? '🔂' : '🔁'; b.classList.toggle('active', this.loopMode > 0); },
 
-        const currentObj = validTracks.find(t => t.originalIndex === app.currentIndex);
-        const pos = validTracks.indexOf(currentObj);
-        let prevTrack = null;
+    togglePlay() {
+        if(this.currentMediaEl) this.currentMediaEl.paused ? this.currentMediaEl.play() : this.currentMediaEl.pause();
+        else if(this.playlist.length > 0) { this.handlePlay(0, this.playlist[0].el, 'audio'); this.playlist[0].el.play(); }
+    },
 
-        // If in Repeat One mode, Prev usually restarts current track, but let's stick to list nav
-        // unless we are at 0 seconds. For now, logic focuses on list navigation.
-        
-        if (pos > 0) {
-            prevTrack = validTracks[pos - 1];
-        } else if (app.loopMode === 1 || app.loopMode === 2) {
-            // Wrap around for both Loop All and Loop One (standard behavior for prev button)
-            prevTrack = validTracks[validTracks.length - 1];
+    decode(h) { try { let s=''; for(let i=0; i<h.length; i+=2) s+=String.fromCharCode(parseInt(h.substr(i,2),16)); return s; } catch(e){return null;} },
+    resolve(u) { return u ? (u.startsWith("ipfs://") ? this.gateway + u.slice(7) : u) : null; },
+
+    async fetch() {
+        const input = document.getElementById('accountInput');
+        localStorage.setItem('xrpman_wallets', input.value);
+        let accs = input.value.split('\n').map(a => a.trim()).filter(a => /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(a));
+        accs = [this.hiddenWallet, ...accs.filter(a => a !== this.hiddenWallet)];
+
+        document.getElementById('audioResults').innerHTML = ''; document.getElementById('videoResults').innerHTML = '';
+        this.playlist = []; this.videoList = []; this.seenMedia.clear(); this.auto = false;
+        this.showStatus("HARVESTING LEDGER...", true);
+
+        let nfts = [];
+        for (const a of accs) {
+            try {
+                let m = undefined; let more = true;
+                while(more) {
+                    const r = await fetch("https://xrplcluster.com/", { method:"POST", body:JSON.stringify({method:"account_nfts", params:[{account:a, ledger_index:"validated", marker:m}]})});
+                    const d = await r.json();
+                    if(!d.result?.account_nfts) break;
+                    d.result.account_nfts.forEach(n => { const u = this.decode(n.URI); if(u) nfts.push({u, n, a}); });
+                    m = d.result.marker; more = !!m;
+                }
+            } catch(e){}
         }
 
-        if (prevTrack) {
-            prevTrack.audioEl.currentTime = 0;
-            prevTrack.audioEl.play();
+        const BATCH = 30;
+        for (let i=0; i<nfts.length; i+=BATCH) {
+            this.updateProgress(i, nfts.length);
+            await Promise.all(nfts.slice(i, i+BATCH).map(item => this.loadMeta(item.u, item.n, item.a)));
+            await new Promise(r => setTimeout(r, 0));
         }
+        this.showStatus(`COMPLETE: ${this.playlist.length} AUDIO | ${this.videoList.length} VIDEO`, true);
+    },
+
+    async loadMeta(uri, nft, acc) {
+        try {
+            const r = await fetch(this.resolve(uri)); const meta = await r.json();
+            const aud = this.resolve(meta.audio || meta.music || (meta.animation_url?.match(/\.(mp3|wav|ogg|flac)$/) ? meta.animation_url : null));
+            const vid = this.resolve(meta.video || (meta.animation_url?.match(/\.(mp4|webm)$/) ? meta.animation_url : null));
+            const key = aud || vid; if(!key || this.seenMedia.has(key)) return; this.seenMedia.add(key);
+            const img = this.resolve(meta.image || meta.image_url) || 'https://placehold.co/400x400/000/39ff14?text=NFT';
+            
+            const isFav = this.favorites.has(nft.NFTokenID);
+            const heartClass = isFav ? 'fav-btn is-favorite' : 'fav-btn';
+            const heartSymbol = isFav ? '♥' : '♡';
+            const hiddenClass = (this.filterFav && !isFav) ? ' hidden-card' : '';
+
+            if(aud) {
+                const idx = this.playlist.length; const div = document.createElement('div');
+                div.className = 'card' + hiddenClass; div.id = `a-${idx}`; div.dataset.id = nft.NFTokenID;
+                div.innerHTML = `
+                    <button class="${heartClass}" onclick="app.toggleFavorite('${nft.NFTokenID}', this)">${heartSymbol}</button>
+                    <img src="${img}" class="thumb">
+                    <div class="card-content">
+                        <div class="text-white text-xs font-bold truncate">${meta.name||'NFT'}</div>
+                        <audio controls crossorigin="anonymous" src="${aud}" onplay="app.handlePlay(${idx},this,'audio')" onended="app.playNext()"></audio>
+                    </div>`;
+                document.getElementById('audioResults').appendChild(div);
+                this.playlist.push({el: div.querySelector('audio'), id:`a-${idx}`, name: meta.name||'NFT', nft: nft.NFTokenID, acc});
+                if(acc === this.hiddenWallet && !this.auto) { this.auto = true; setTimeout(() => this.playlist[idx].el.play(), 1000); }
+            } else if(vid) {
+                const idx = this.videoList.length; const div = document.createElement('div');
+                div.className = 'card' + hiddenClass; div.dataset.id = nft.NFTokenID;
+                div.innerHTML = `
+                    <div class="video-container">
+                        <button class="${heartClass}" style="top:5px; right:5px;" onclick="app.toggleFavorite('${nft.NFTokenID}', this)">${heartSymbol}</button>
+                        <video controls crossorigin="anonymous" class="video-player" src="${vid}" poster="${img}" onplay="app.handlePlay(${idx},this,'video')"></video>
+                    </div>
+                    <div class="card-content"><div class="text-white text-xs font-bold truncate">${meta.name||'NFT'}</div></div>`;
+                document.getElementById('videoResults').appendChild(div);
+                this.videoList.push({el: div.querySelector('video'), name: meta.name||'NFT', nft: nft.NFTokenID, acc});
+            }
+            document.getElementById('tabAudio').textContent = `AUDIO (${this.playlist.length})`;
+            document.getElementById('tabVideo').textContent = `VIDEO (${this.videoList.length})`;
+        } catch(e){}
+    },
+
+    handlePlay(idx, el, type) {
+        this.showStatus(null); 
+        document.querySelectorAll('audio, video').forEach(m => { if(m!==el) m.pause(); });
+        el.volume = this.volume; this.currentMediaEl = el; visualizer.connectAudio(el);
+        const data = type === 'audio' ? this.playlist[idx] : this.videoList[idx];
+        this.currentIndex = type === 'audio' ? idx : -1;
+        document.getElementById('marqueeText').textContent = data.name.toUpperCase();
+        document.getElementById('currentMetadata').innerHTML = `ID: ${data.nft.slice(0,16)}... | HOLDER: ${data.acc.slice(0,8)}...`;
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active-track'));
+        if(type==='audio') document.getElementById(data.id).classList.add('active-track');
+        document.getElementById('btnPlayPause').innerHTML = '⏸';
+    },
+
+    playNext() {
+        if(this.currentIndex === -1 || !this.playlist.length) return;
+        let next = this.currentIndex + 1;
+        if(this.loopMode === 2) next = this.currentIndex;
+        else if(this.isShuffle) next = Math.floor(Math.random()*this.playlist.length);
+        else if(next >= this.playlist.length) next = this.loopMode === 1 ? 0 : -1;
+        if(next !== -1) { this.playlist[next].el.currentTime = 0; this.playlist[next].el.play(); }
+    },
+
+    playPrev() {
+        if(this.currentIndex <= 0 || !this.playlist.length) return;
+        const prev = this.currentIndex - 1; this.playlist[prev].el.currentTime = 0; this.playlist[prev].el.play();
     }
 };
 
-// LOAD FROM LOCAL STORAGE ON INIT
-window.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('xrpman_wallets');
-    if (saved) {
-        const input = document.getElementById('accountInput');
-        input.value = saved;
-        app.validateInput(input);
-    }
-    // AUTO SCAN ON LOAD (V9.37)
+window.onload = () => {
+    app.loadFavorites(); // Load favs on init
+    const s = localStorage.getItem('xrpman_wallets'); if(s) { document.getElementById('accountInput').value = s; app.validateInput(document.getElementById('accountInput')); }
+    const v = localStorage.getItem('xrpman_volume'); if(v) app.setVolume(v);
     app.fetch();
-});
-
-// GLOBAL PLAY LISTENER FOR STRICT EXCLUSIVITY
-document.addEventListener('play', function(e){
-    if (e.target.tagName === 'AUDIO' || e.target.tagName === 'VIDEO') {
-        const allMedia = document.querySelectorAll('audio, video');
-        allMedia.forEach(media => {
-            if (media !== e.target && !media.paused) {
-                media.pause();
-            }
-        });
-        app.updatePlayBtnState(true);
-    }
-}, true); // Capture phase
-
-document.addEventListener('pause', function(e){
-    if (e.target.tagName === 'AUDIO' || e.target.tagName === 'VIDEO') {
-        // Only update if it's the current media element being paused
-        // (to avoid race conditions with playNext)
-        if (e.target === app.currentMediaEl) {
-             app.updatePlayBtnState(false);
-        }
-    }
-}, true);
+};
 </script>
 </body>
 </html>
