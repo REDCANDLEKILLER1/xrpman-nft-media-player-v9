@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.50</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.52</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -63,7 +63,7 @@
             width: 100vw;
             height: 100vh;
             z-index: -1;
-            opacity: 0.6; /* INCREASED from 0.3 for visibility */
+            opacity: 0.6; 
             pointer-events: none;
         }
 
@@ -74,8 +74,8 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: 1000; /* High z-index to cover everything */
-            display: none; /* Hidden by default */
+            z-index: 1000; 
+            display: none; 
             background-color: var(--bg);
             cursor: pointer;
         }
@@ -87,7 +87,7 @@
             position: relative;
             overflow: visible; 
             background: rgba(0, 0, 0, 0.8);
-            border-bottom: none; /* Merge with control bar visually */
+            border-bottom: none; 
         }
         #visCanvas {
             width: 100%;
@@ -172,7 +172,7 @@
             padding: 20px;
         }
         
-        /* HUD Card Style */
+        /* HUD Card Style (Base Grid) */
         .card {
             background: var(--glass);
             border: 1px solid var(--neon);
@@ -200,6 +200,53 @@
             z-index: 10;
         }
         .card.hidden-card { display: none !important; }
+
+        /* LIST VIEW STYLES (Overrides) */
+        .list-mode-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+        }
+        
+        .list-mode-grid .card {
+            flex-direction: row;
+            align-items: center;
+            height: 120px;
+            margin-bottom: 5px;
+        }
+        
+        .list-mode-grid .thumb {
+            width: 120px;
+            height: 100%;
+            border-bottom: none;
+            border-right: 1px solid var(--neon);
+        }
+        
+        .list-mode-grid .video-container {
+            width: 160px; /* Video needs slightly more width */
+            height: 100%;
+            border-bottom: none;
+            border-right: 1px solid var(--neon);
+        }
+        
+        .list-mode-grid .card-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 20px;
+        }
+        
+        /* Adjust favorite button pos in List Mode */
+        .list-mode-grid .fav-btn {
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .list-mode-grid .video-container .fav-btn {
+            display: none; /* Hide internal vid fav btn, use outer logic if needed or keep overlay */
+        }
 
         /* FAVORITE BUTTON STYLE */
         .fav-btn {
@@ -245,6 +292,7 @@
             height: 180px;
             background: black;
             border-bottom: 1px solid var(--neon);
+            position: relative;
         }
         .video-player {
             width: 100%;
@@ -602,7 +650,7 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.50</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.52</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -674,7 +722,10 @@
             <button id="btnShuffle" class="icon-btn toggle-btn" onclick="app.toggleShuffle()" title="Shuffle">🔀</button>
             <button id="btnLoop" class="icon-btn toggle-btn active" onclick="app.toggleLoop()" title="Loop">🔁</button>
             <div class="divider"></div>
-            <!-- NEW FAVORITES FILTER BUTTON -->
+            
+            <!-- NEW: View Toggle -->
+            <button id="btnView" class="icon-btn toggle-btn" onclick="app.toggleListView()" title="Toggle Grid/List">☰</button>
+            
             <button id="btnFav" class="icon-btn toggle-btn" onclick="app.toggleFavView()" title="Filter Favorites" style="font-size: 10px;">FAV</button>
             <button id="btnEQ" class="icon-btn toggle-btn active" onclick="eqControl.toggleModal(true)" title="EQ" style="font-size: 10px;">EQ</button>
         </div>
@@ -732,11 +783,12 @@
 </div>
 
 <script>
-// --- CORE UTILS & MATRIX ---
+// --- CORE UTILS & MATRIX (UPDATED AUTHENTIC CHARS) ---
 const matrix = {
     canvas: document.getElementById('matrixCanvas'),
     ctx: null,
-    chars: "01XRPMANXMEME01",
+    // Authentic Matrix characters: Katakana + Latin + Numerals
+    chars: "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     drops: [],
     init() {
         this.ctx = this.canvas.getContext('2d');
@@ -965,30 +1017,26 @@ const app = {
     isShuffle: false, loopMode: 1, volume: 1, seenMedia: new Set(),
     favorites: new Set(), filterFav: false, // NEW: Favorites Logic
     hiddenWallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL", auto: false,
-    statusTimer: null, // NEW: Timer reference
+    statusTimer: null,
+    viewMode: 'grid', // NEW: View Mode
 
     showStatus(msg, ok, duration = 0) {
         const el = document.getElementById('status');
         
-        // Clear any existing timer
-        if (this.statusTimer) {
-            clearTimeout(this.statusTimer);
-            this.statusTimer = null;
-        }
+        if (this.statusTimer) { clearTimeout(this.statusTimer); this.statusTimer = null; }
 
         if(!msg) { 
             el.classList.add('hidden'); 
-            el.style.display = 'none'; // Force hide
+            el.style.display = 'none'; 
             return; 
         }
         
         el.textContent = msg; 
         el.classList.remove('hidden');
-        el.style.display = 'block'; // Force show
+        el.style.display = 'block'; 
         el.style.color = ok ? 'var(--neon)' : 'var(--color-red)';
         el.style.borderColor = ok ? 'var(--neon)' : 'var(--color-red)';
 
-        // Auto-clear logic
         if (duration > 0) {
             this.statusTimer = setTimeout(() => {
                 el.classList.add('hidden');
@@ -1035,7 +1083,6 @@ const app = {
             this.favorites.delete(id);
             btn.classList.remove('is-favorite');
             btn.innerHTML = '♡';
-            // Immediate UI update if filter is active
             if(this.filterFav && card) card.classList.add('hidden-card');
         } else {
             this.favorites.add(id);
@@ -1068,9 +1115,38 @@ const app = {
         });
         
         if (this.filterFav) {
-            this.showStatus(`SHOWING ${visibleCount} FAVORITES`, true, 3000); // Auto-clear after 3s
+            this.showStatus(`SHOWING ${visibleCount} FAVORITES`, true, 3000);
         } else {
-            this.showStatus(null); // Instant clear
+            this.showStatus(null);
+        }
+    },
+
+    // --- VIEW MODE LOGIC ---
+    toggleListView() {
+        this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
+        localStorage.setItem('xrpman_view', this.viewMode);
+        this.applyViewMode();
+    },
+
+    applyViewMode() {
+        const audioC = document.getElementById('audioResults');
+        const videoC = document.getElementById('videoResults');
+        const btn = document.getElementById('btnView');
+        
+        if (this.viewMode === 'list') {
+            audioC.classList.add('list-mode-grid');
+            videoC.classList.add('list-mode-grid');
+            audioC.classList.remove('grid-cols-2', 'sm:grid-cols-3');
+            videoC.classList.remove('grid-cols-1', 'sm:grid-cols-2');
+            btn.classList.add('active');
+            btn.innerHTML = '☰'; 
+        } else {
+            audioC.classList.remove('list-mode-grid');
+            videoC.classList.remove('list-mode-grid');
+            audioC.classList.add('grid-cols-2', 'sm:grid-cols-3');
+            videoC.classList.add('grid-cols-1', 'sm:grid-cols-2');
+            btn.classList.remove('active');
+            btn.innerHTML = '☷'; 
         }
     },
 
@@ -1195,7 +1271,11 @@ const app = {
 };
 
 window.onload = () => {
-    app.loadFavorites(); // Load favs on init
+    app.loadFavorites(); 
+    // Load View Preference
+    const view = localStorage.getItem('xrpman_view');
+    if (view) { app.viewMode = view; app.applyViewMode(); }
+    
     const s = localStorage.getItem('xrpman_wallets'); if(s) { document.getElementById('accountInput').value = s; app.validateInput(document.getElementById('accountInput')); }
     const v = localStorage.getItem('xrpman_volume'); if(v) app.setVolume(v);
     app.fetch();
