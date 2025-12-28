@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.54</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.55</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -651,7 +651,7 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.54</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.55</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -784,7 +784,7 @@
 </div>
 
 <script>
-// --- CORE UTILS & MATRIX ---
+// --- CORE UTILS & MATRIX (UPDATED AUTHENTIC CHARS) ---
 const matrix = {
     canvas: document.getElementById('matrixCanvas'),
     ctx: null,
@@ -864,7 +864,7 @@ const eqControl = {
     handleModalClick(e) { if (e.target.id === 'eqModal') this.toggleModal(false); }
 };
 
-// --- VISUALIZER ENGINE ---
+// --- VISUALIZER ENGINE (FIXED LOGIC) ---
 const visualizer = {
     canvas: document.getElementById('visCanvas'),
     ctx: null, audioCtx: null, analyser: null, dataArray: null, mode: 'wave', color: '#39ff14',
@@ -890,6 +890,8 @@ const visualizer = {
         ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,w,h);
         if (!this.analyser) return;
         const data = this.dataArray;
+        
+        // --- RESTORED UNIQUE DRAW LOGIC ---
         if (this.mode === 'wave') {
             this.analyser.getByteTimeDomainData(data);
             ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = this.color;
@@ -900,11 +902,38 @@ const visualizer = {
                 x += slice;
             }
             ctx.stroke();
-        } else {
+        } else if (this.mode === 'bars') {
             this.analyser.getByteFrequencyData(data);
             const bars = 32; const bw = w/bars;
             for(let i=0; i<bars; i++) {
                 const bh = (data[i*4]/255)*h; ctx.fillStyle = this.color; ctx.fillRect(i*bw, h-bh, bw-2, bh);
+            }
+        } else if (this.mode === 'dualbars') {
+            this.analyser.getByteFrequencyData(data);
+            const bars = 40; const bw = w/bars; const cy = h/2;
+            for(let i=0; i<bars; i++) {
+                const bh = (data[i*2]/255)*(h/2); 
+                ctx.fillStyle = this.color; 
+                ctx.fillRect(i*bw, cy-bh, bw-2, bh);
+                ctx.fillStyle = this.color + "90";
+                ctx.fillRect(i*bw, cy, bw-2, bh);
+            }
+        } else if (this.mode === 'circles') {
+            this.analyser.getByteFrequencyData(data);
+            let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
+            ctx.beginPath(); ctx.arc(w/2, h/2, 20 + (bass/255)*(h/3), 0, Math.PI*2);
+            ctx.strokeStyle = this.color; ctx.lineWidth = 3; ctx.stroke();
+            ctx.beginPath(); ctx.arc(w/2, h/2, 10 + (data[20]/255)*(h/4), 0, Math.PI*2);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        } else if (this.mode === 'pixel') {
+            this.analyser.getByteFrequencyData(data);
+            const cols = 20; const rows = 10; const cw = w/cols; const rh = h/rows;
+            for(let c=0; c<cols; c++) {
+                const val = Math.floor((data[c*3]/255)*rows);
+                for(let r=0; r<val; r++) {
+                    ctx.fillStyle = (r===val-1) ? '#fff' : this.color;
+                    ctx.fillRect(c*cw+1, h-(r+1)*rh+1, cw-2, rh-2);
+                }
             }
         }
     },
@@ -912,7 +941,7 @@ const visualizer = {
 };
 visualizer.init();
 
-// --- SCREENSAVER ENGINE ---
+// --- SCREENSAVER ENGINE (INDEPENDENT MODE) ---
 const screensaverEngine = {
     canvas: document.getElementById('screensaverCanvas'),
     ctx: null, isActive: false, mode: 'original', offset: 0, rafId: null,
@@ -1173,15 +1202,13 @@ const app = {
             const vid = this.resolve(meta.video || (meta.animation_url?.match(/\.(mp4|webm)$/) ? meta.animation_url : null));
             const img = this.resolve(meta.image || meta.image_url) || 'https://placehold.co/400x400/000/39ff14?text=NFT';
             
-            // Logic: Audio -> Audio Tab; Video -> Video Tab; Else If Image -> Image Tab
             let type = null;
             if (aud) type = 'audio';
             else if (vid) type = 'video';
-            else if (img && !aud && !vid) type = 'image'; // Only treat as pure image if no media
+            else if (img && !aud && !vid) type = 'image';
 
             if (!type) return;
 
-            // Dedup based on primary asset
             const key = aud || vid || (type === 'image' ? img : null);
             if(!key || this.seenMedia.has(key)) return; 
             this.seenMedia.add(key);
@@ -1218,7 +1245,6 @@ const app = {
             } else if (type === 'image') {
                 const idx = this.imageList.length; const div = document.createElement('div');
                 div.className = 'card' + hiddenClass; div.dataset.id = nft.NFTokenID;
-                // Image card with link to full size
                 div.innerHTML = `
                     <button class="${heartClass}" onclick="app.toggleFavorite('${nft.NFTokenID}', this)">${heartSymbol}</button>
                     <a href="${img}" target="_blank">
