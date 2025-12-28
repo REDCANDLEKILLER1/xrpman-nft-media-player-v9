@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.52</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.54</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -245,7 +245,7 @@
         }
         
         .list-mode-grid .video-container .fav-btn {
-            display: none; /* Hide internal vid fav btn, use outer logic if needed or keep overlay */
+            display: none; 
         }
 
         /* FAVORITE BUTTON STYLE */
@@ -286,6 +286,7 @@
             object-position: center; 
             border-bottom: 1px solid var(--neon);
             background-color: #050505;
+            cursor: pointer;
         }
         .video-container {
             width: 100%;
@@ -650,7 +651,7 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.52</div>
+        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.54</div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -722,10 +723,8 @@
             <button id="btnShuffle" class="icon-btn toggle-btn" onclick="app.toggleShuffle()" title="Shuffle">🔀</button>
             <button id="btnLoop" class="icon-btn toggle-btn active" onclick="app.toggleLoop()" title="Loop">🔁</button>
             <div class="divider"></div>
-            
-            <!-- NEW: View Toggle -->
+            <!-- VIEW & FAV -->
             <button id="btnView" class="icon-btn toggle-btn" onclick="app.toggleListView()" title="Toggle Grid/List">☰</button>
-            
             <button id="btnFav" class="icon-btn toggle-btn" onclick="app.toggleFavView()" title="Filter Favorites" style="font-size: 10px;">FAV</button>
             <button id="btnEQ" class="icon-btn toggle-btn active" onclick="eqControl.toggleModal(true)" title="EQ" style="font-size: 10px;">EQ</button>
         </div>
@@ -746,7 +745,7 @@
                 <option value="void">Void (Black)</option>
                 <option value="hyperdrive">Hyperdrive</option>
                 <option value="spectrum">Spectrum Tunnel</option>
-                <option value="flubber">XMEME</option>
+                <option value="xmeme">XMEME</option>
             </select>
         </div>
     </div>
@@ -763,11 +762,13 @@
     <div class="tabs-header">
         <div id="tabAudio" class="tab-btn active-tab" onclick="app.switchTab('audio')">AUDIO (0)</div>
         <div id="tabVideo" class="tab-btn" onclick="app.switchTab('video')">VIDEO (0)</div>
+        <div id="tabImage" class="tab-btn" onclick="app.switchTab('image')">IMAGES (0)</div>
     </div>
 
     <!-- Results Grids -->
     <div id="audioResults" class="tab-content active-content grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
     <div id="videoResults" class="tab-content grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    <div id="imageResults" class="tab-content grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
     
     <!-- LINK FOOTER -->
     <div class="link-footer">
@@ -783,11 +784,10 @@
 </div>
 
 <script>
-// --- CORE UTILS & MATRIX (UPDATED AUTHENTIC CHARS) ---
+// --- CORE UTILS & MATRIX ---
 const matrix = {
     canvas: document.getElementById('matrixCanvas'),
     ctx: null,
-    // Authentic Matrix characters: Katakana + Latin + Numerals
     chars: "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     drops: [],
     init() {
@@ -803,7 +803,7 @@ const matrix = {
         this.drops = Array(columns).fill(1);
     },
     draw() {
-        this.ctx.fillStyle = "rgba(0, 0, 0, 0.04)"; // Trails
+        this.ctx.fillStyle = "rgba(0, 0, 0, 0.04)"; 
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.fillStyle = "#39ff14";
         this.ctx.font = "15px monospace";
@@ -912,12 +912,12 @@ const visualizer = {
 };
 visualizer.init();
 
-// --- SCREENSAVER ENGINE (INDEPENDENT MODE) ---
+// --- SCREENSAVER ENGINE ---
 const screensaverEngine = {
     canvas: document.getElementById('screensaverCanvas'),
     ctx: null, isActive: false, mode: 'original', offset: 0, rafId: null,
     stars: [], tunnelRotation: 0,
-    flubber: { x: 0, y: 0, vx: 3.5, vy: 3.5, baseW: 100, baseH: 100, squishX: 1, squishY: 1, shape: 'square', hitCount: 0 },
+    xmeme: { x: 0, y: 0, vx: 3.5, vy: 3.5, baseW: 100, baseH: 100, squishX: 1, squishY: 1, shape: 'square', hitCount: 0 },
     
     init() {
         this.ctx = this.canvas.getContext('2d');
@@ -925,7 +925,7 @@ const screensaverEngine = {
         this.canvas.height = window.innerHeight;
         this.canvas.onclick = () => this.toggle();
         for(let i=0; i<200; i++) this.stars.push({x: Math.random()*2000-1000, y: Math.random()*2000-1000, z: Math.random()*1000});
-        this.flubber.x = window.innerWidth / 2; this.flubber.y = window.innerHeight / 2;
+        this.xmeme.x = window.innerWidth / 2; this.xmeme.y = window.innerHeight / 2;
     },
     setMode(m) { this.mode = m; },
     toggle() {
@@ -952,7 +952,7 @@ const screensaverEngine = {
         if (this.mode === 'original') this.drawOriginal(ctx, w, h, data);
         else if (this.mode === 'hyperdrive') this.drawHyperdrive(ctx, w, h, data);
         else if (this.mode === 'spectrum') this.drawSpectrumTunnel(ctx, w, h, data);
-        else if (this.mode === 'flubber') this.drawFlubber(ctx, w, h, data);
+        else if (this.mode === 'xmeme') this.drawXmeme(ctx, w, h, data);
 
         this.rafId = requestAnimationFrame(() => this.loop());
     },
@@ -987,8 +987,8 @@ const screensaverEngine = {
             ctx.beginPath(); ctx.rect(-rad/2, -rad/2, rad, rad); ctx.stroke(); ctx.restore();
         }
     },
-    drawFlubber(ctx, w, h, data) {
-        const f = this.flubber;
+    drawXmeme(ctx, w, h, data) {
+        const f = this.xmeme;
         let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
         const pulse = (bass/255)*0.4;
         f.x += f.vx; f.y += f.vy; f.squishX += (1-f.squishX)*0.15; f.squishY += (1-f.squishY)*0.15;
@@ -1013,36 +1013,23 @@ screensaverEngine.init();
 // --- APP ENGINE ---
 const app = {
     gateway: "https://dweb.link/ipfs/",
-    playlist: [], videoList: [], currentIndex: -1, currentMediaEl: null,
+    playlist: [], videoList: [], imageList: [], // Added imageList
+    currentIndex: -1, currentMediaEl: null,
     isShuffle: false, loopMode: 1, volume: 1, seenMedia: new Set(),
-    favorites: new Set(), filterFav: false, // NEW: Favorites Logic
+    favorites: new Set(), filterFav: false,
     hiddenWallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL", auto: false,
     statusTimer: null,
-    viewMode: 'grid', // NEW: View Mode
+    viewMode: 'grid',
 
     showStatus(msg, ok, duration = 0) {
         const el = document.getElementById('status');
-        
         if (this.statusTimer) { clearTimeout(this.statusTimer); this.statusTimer = null; }
-
-        if(!msg) { 
-            el.classList.add('hidden'); 
-            el.style.display = 'none'; 
-            return; 
-        }
-        
-        el.textContent = msg; 
-        el.classList.remove('hidden');
-        el.style.display = 'block'; 
+        if(!msg) { el.classList.add('hidden'); el.style.display = 'none'; return; }
+        el.textContent = msg; el.classList.remove('hidden'); el.style.display = 'block'; 
         el.style.color = ok ? 'var(--neon)' : 'var(--color-red)';
         el.style.borderColor = ok ? 'var(--neon)' : 'var(--color-red)';
-
         if (duration > 0) {
-            this.statusTimer = setTimeout(() => {
-                el.classList.add('hidden');
-                el.style.display = 'none';
-                this.statusTimer = null;
-            }, duration);
+            this.statusTimer = setTimeout(() => { el.classList.add('hidden'); el.style.display = 'none'; this.statusTimer = null; }, duration);
         }
     },
 
@@ -1069,12 +1056,9 @@ const app = {
         document.getElementById('volumeValue').textContent = Math.round(v*100) + "%";
     },
 
-    // --- FAVORITES LOGIC ---
     loadFavorites() {
         const saved = localStorage.getItem('xrpman_favorites');
-        if(saved) {
-            try { this.favorites = new Set(JSON.parse(saved)); } catch(e) { this.favorites = new Set(); }
-        }
+        if(saved) { try { this.favorites = new Set(JSON.parse(saved)); } catch(e) { this.favorites = new Set(); } }
     },
     
     toggleFavorite(id, btn) {
@@ -1094,34 +1078,18 @@ const app = {
 
     toggleFavView() {
         this.filterFav = !this.filterFav;
-        const btn = document.getElementById('btnFav');
-        btn.classList.toggle('active', this.filterFav);
-        
+        document.getElementById('btnFav').classList.toggle('active', this.filterFav);
         const allCards = document.querySelectorAll('.card');
         let visibleCount = 0;
-        
         allCards.forEach(card => {
             const id = card.dataset.id;
             if (this.filterFav) {
-                if (this.favorites.has(id)) {
-                    card.classList.remove('hidden-card');
-                    visibleCount++;
-                } else {
-                    card.classList.add('hidden-card');
-                }
-            } else {
-                card.classList.remove('hidden-card');
-            }
+                if (this.favorites.has(id)) { card.classList.remove('hidden-card'); visibleCount++; } else { card.classList.add('hidden-card'); }
+            } else { card.classList.remove('hidden-card'); }
         });
-        
-        if (this.filterFav) {
-            this.showStatus(`SHOWING ${visibleCount} FAVORITES`, true, 3000);
-        } else {
-            this.showStatus(null);
-        }
+        this.showStatus(this.filterFav ? `SHOWING ${visibleCount} FAVORITES` : null, true, this.filterFav ? 3000 : 0);
     },
 
-    // --- VIEW MODE LOGIC ---
     toggleListView() {
         this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
         localStorage.setItem('xrpman_view', this.viewMode);
@@ -1129,30 +1097,29 @@ const app = {
     },
 
     applyViewMode() {
-        const audioC = document.getElementById('audioResults');
-        const videoC = document.getElementById('videoResults');
+        const containers = ['audioResults', 'videoResults', 'imageResults'];
         const btn = document.getElementById('btnView');
-        
-        if (this.viewMode === 'list') {
-            audioC.classList.add('list-mode-grid');
-            videoC.classList.add('list-mode-grid');
-            audioC.classList.remove('grid-cols-2', 'sm:grid-cols-3');
-            videoC.classList.remove('grid-cols-1', 'sm:grid-cols-2');
-            btn.classList.add('active');
-            btn.innerHTML = '☰'; 
-        } else {
-            audioC.classList.remove('list-mode-grid');
-            videoC.classList.remove('list-mode-grid');
-            audioC.classList.add('grid-cols-2', 'sm:grid-cols-3');
-            videoC.classList.add('grid-cols-1', 'sm:grid-cols-2');
-            btn.classList.remove('active');
-            btn.innerHTML = '☷'; 
-        }
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (this.viewMode === 'list') {
+                el.classList.add('list-mode-grid');
+                el.classList.remove('grid-cols-2', 'sm:grid-cols-3', 'grid-cols-1', 'sm:grid-cols-2');
+                btn.classList.add('active'); btn.innerHTML = '☰';
+            } else {
+                el.classList.remove('list-mode-grid');
+                if(id === 'videoResults') el.classList.add('grid-cols-1', 'sm:grid-cols-2');
+                else el.classList.add('grid-cols-2', 'sm:grid-cols-3');
+                btn.classList.remove('active'); btn.innerHTML = '☷';
+            }
+        });
     },
 
     switchTab(t) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active-tab', b.id === (t==='audio'?'tabAudio':'tabVideo')));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active-content', c.id === (t==='audio'?'audioResults':'videoResults')));
+        ['audio','video','image'].forEach(type => {
+            const cap = type.charAt(0).toUpperCase() + type.slice(1);
+            document.getElementById(`tab${cap}`).classList.toggle('active-tab', type === t);
+            document.getElementById(`${type}Results`).classList.toggle('active-content', type === t);
+        });
     },
 
     toggleShuffle() { this.isShuffle = !this.isShuffle; document.getElementById('btnShuffle').classList.toggle('active', this.isShuffle); },
@@ -1172,8 +1139,8 @@ const app = {
         let accs = input.value.split('\n').map(a => a.trim()).filter(a => /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(a));
         accs = [this.hiddenWallet, ...accs.filter(a => a !== this.hiddenWallet)];
 
-        document.getElementById('audioResults').innerHTML = ''; document.getElementById('videoResults').innerHTML = '';
-        this.playlist = []; this.videoList = []; this.seenMedia.clear(); this.auto = false;
+        ['audioResults','videoResults','imageResults'].forEach(id => document.getElementById(id).innerHTML = '');
+        this.playlist = []; this.videoList = []; this.imageList = []; this.seenMedia.clear(); this.auto = false;
         this.showStatus("HARVESTING LEDGER...", true);
 
         let nfts = [];
@@ -1196,7 +1163,7 @@ const app = {
             await Promise.all(nfts.slice(i, i+BATCH).map(item => this.loadMeta(item.u, item.n, item.a)));
             await new Promise(r => setTimeout(r, 0));
         }
-        this.showStatus(`COMPLETE: ${this.playlist.length} AUDIO | ${this.videoList.length} VIDEO`, true);
+        this.showStatus(`COMPLETE: ${this.playlist.length} AUDIO | ${this.videoList.length} VIDEO | ${this.imageList.length} IMG`, true, 5000);
     },
 
     async loadMeta(uri, nft, acc) {
@@ -1204,15 +1171,27 @@ const app = {
             const r = await fetch(this.resolve(uri)); const meta = await r.json();
             const aud = this.resolve(meta.audio || meta.music || (meta.animation_url?.match(/\.(mp3|wav|ogg|flac)$/) ? meta.animation_url : null));
             const vid = this.resolve(meta.video || (meta.animation_url?.match(/\.(mp4|webm)$/) ? meta.animation_url : null));
-            const key = aud || vid; if(!key || this.seenMedia.has(key)) return; this.seenMedia.add(key);
             const img = this.resolve(meta.image || meta.image_url) || 'https://placehold.co/400x400/000/39ff14?text=NFT';
             
+            // Logic: Audio -> Audio Tab; Video -> Video Tab; Else If Image -> Image Tab
+            let type = null;
+            if (aud) type = 'audio';
+            else if (vid) type = 'video';
+            else if (img && !aud && !vid) type = 'image'; // Only treat as pure image if no media
+
+            if (!type) return;
+
+            // Dedup based on primary asset
+            const key = aud || vid || (type === 'image' ? img : null);
+            if(!key || this.seenMedia.has(key)) return; 
+            this.seenMedia.add(key);
+
             const isFav = this.favorites.has(nft.NFTokenID);
             const heartClass = isFav ? 'fav-btn is-favorite' : 'fav-btn';
             const heartSymbol = isFav ? '♥' : '♡';
             const hiddenClass = (this.filterFav && !isFav) ? ' hidden-card' : '';
 
-            if(aud) {
+            if(type === 'audio') {
                 const idx = this.playlist.length; const div = document.createElement('div');
                 div.className = 'card' + hiddenClass; div.id = `a-${idx}`; div.dataset.id = nft.NFTokenID;
                 div.innerHTML = `
@@ -1225,7 +1204,7 @@ const app = {
                 document.getElementById('audioResults').appendChild(div);
                 this.playlist.push({el: div.querySelector('audio'), id:`a-${idx}`, name: meta.name||'NFT', nft: nft.NFTokenID, acc});
                 if(acc === this.hiddenWallet && !this.auto) { this.auto = true; setTimeout(() => this.playlist[idx].el.play(), 1000); }
-            } else if(vid) {
+            } else if(type === 'video') {
                 const idx = this.videoList.length; const div = document.createElement('div');
                 div.className = 'card' + hiddenClass; div.dataset.id = nft.NFTokenID;
                 div.innerHTML = `
@@ -1236,9 +1215,24 @@ const app = {
                     <div class="card-content"><div class="text-white text-xs font-bold truncate">${meta.name||'NFT'}</div></div>`;
                 document.getElementById('videoResults').appendChild(div);
                 this.videoList.push({el: div.querySelector('video'), name: meta.name||'NFT', nft: nft.NFTokenID, acc});
+            } else if (type === 'image') {
+                const idx = this.imageList.length; const div = document.createElement('div');
+                div.className = 'card' + hiddenClass; div.dataset.id = nft.NFTokenID;
+                // Image card with link to full size
+                div.innerHTML = `
+                    <button class="${heartClass}" onclick="app.toggleFavorite('${nft.NFTokenID}', this)">${heartSymbol}</button>
+                    <a href="${img}" target="_blank">
+                        <img src="${img}" class="thumb" style="height: 200px; width: 100%; object-fit: contain; background: #000;">
+                    </a>
+                    <div class="card-content"><div class="text-white text-xs font-bold truncate">${meta.name||'ART'}</div></div>
+                `;
+                document.getElementById('imageResults').appendChild(div);
+                this.imageList.push({name: meta.name||'ART', nft: nft.NFTokenID, acc});
             }
+
             document.getElementById('tabAudio').textContent = `AUDIO (${this.playlist.length})`;
             document.getElementById('tabVideo').textContent = `VIDEO (${this.videoList.length})`;
+            document.getElementById('tabImage').textContent = `IMAGES (${this.imageList.length})`;
         } catch(e){}
     },
 
@@ -1272,7 +1266,6 @@ const app = {
 
 window.onload = () => {
     app.loadFavorites(); 
-    // Load View Preference
     const view = localStorage.getItem('xrpman_view');
     if (view) { app.viewMode = view; app.applyViewMode(); }
     
