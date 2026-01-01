@@ -747,6 +747,7 @@
                 <option value="spectrum">Spectrum Tunnel</option>
                 <option value="xmeme">XMEME</option>
                 <option value="gallery">NFT Gallery</option>
+                <option value="bouncy">Bouncy Solo NFT</option>
             </select>
         </div>
     </div>
@@ -948,6 +949,7 @@ const screensaverEngine = {
     ctx: null, isActive: false, mode: 'original', offset: 0, rafId: null,
     stars: [], tunnelRotation: 0,
     gallery: { current: null, timer: 0, opacity: 0, nextIdx: -1, loaded: new Map() },
+    bouncy: { solo: null, lastMetaCount: 0 },
     xmeme: { x: 0, y: 0, vx: 3.5, vy: 3.5, baseW: 100, baseH: 100, squishX: 1, squishY: 1, shape: 'square', hitCount: 0 },
     
     init() {
@@ -964,7 +966,7 @@ const screensaverEngine = {
         this.canvas.style.display = this.isActive ? 'block' : 'none';
         if (this.isActive) {
             wakeLockManager.requestLock(); 
-            this.gallery.timer = 0; // Reset gallery timer on start
+            this.gallery.timer = 0;
             this.loop();
         } else { cancelAnimationFrame(this.rafId); wakeLockManager.releaseLock(); }
     },
@@ -986,6 +988,7 @@ const screensaverEngine = {
         else if (this.mode === 'spectrum') this.drawSpectrumTunnel(ctx, w, h, data);
         else if (this.mode === 'xmeme') this.drawXmeme(ctx, w, h, data);
         else if (this.mode === 'gallery') this.drawGallery(ctx, w, h, data);
+        else if (this.mode === 'bouncy') this.drawBouncySolo(ctx, w, h, data);
 
         this.rafId = requestAnimationFrame(() => this.loop());
     },
@@ -1026,26 +1029,19 @@ const screensaverEngine = {
             ctx.fillStyle = visualizer.color; ctx.font = "20px monospace"; ctx.textAlign = "center";
             ctx.fillText("NO NFT IMAGES FOUND IN WALLET", w/2, h/2); return;
         }
-
         const g = this.gallery;
         g.timer++;
-
-        // Change image every 300 frames (~5 seconds)
         if (g.timer > 300 || !g.current) {
             g.timer = 0;
             const nextIdx = Math.floor(Math.random() * images.length);
             const nextUrl = images[nextIdx].url;
-            
             if (!g.loaded.has(nextUrl)) {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.src = nextUrl;
+                const img = new Image(); img.crossOrigin = "anonymous"; img.src = nextUrl;
                 img.onload = () => g.loaded.set(nextUrl, img);
             }
             g.current = g.loaded.get(nextUrl) || g.current;
             g.opacity = 0;
         }
-
         if (g.current) {
             if (g.opacity < 1) g.opacity += 0.02;
             ctx.globalAlpha = g.opacity;
@@ -1053,10 +1049,357 @@ const screensaverEngine = {
             let dw, dh;
             if (w/h > aspect) { dh = h * 0.8; dw = dh * aspect; }
             else { dw = w * 0.8; dh = dw / aspect; }
-            
-            // Neon Frame
-            ctx.strokeStyle = visualizer.color;
-            ctx.lineWidth = 4;
+            ctx.strokeStyle = visualizer.color; ctx.lineWidth = 4;
             ctx.strokeRect((w-dw)/2 - 5, (h-dh)/2 - 5, dw + 10, dh + 10);
             ctx.drawImage(g.current, (w-dw)/2, (h-dh)/2, dw, dh);
-   
+            ctx.globalAlpha = 1.0;
+            let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 + (bass/255)*10;
+            ctx.strokeRect((w-dw)/2 - 10, (h-dh)/2 - 10, dw + 20, dh + 20);
+        }
+    },
+    drawBouncySolo(ctx, w, h, data) {
+        const images = app.imageList;
+        if (images.length === 0) {
+            ctx.fillStyle = visualizer.color; ctx.font = "20px monospace"; ctx.textAlign = "center";
+            ctx.fillText("NO NFT IMAGES FOUND", w/2, h/2); return;
+        }
+
+        // Initialize solo bouncy item if missing (Velocity slowed to 2.2)
+        if (!this.bouncy.solo) {
+            const size = 200 + Math.random() * 100;
+            const idx = Math.floor(Math.random() * images.length);
+            const img = new Image(); img.crossOrigin = "anonymous"; img.src = images[idx].url;
+            this.bouncy.solo = {
+                img, x: Math.random() * (w - size), y: Math.random() * (h - size),
+                vx: 2.2, vy: 2.2, size, loaded: false, index: idx
+            };
+            this.bouncy.solo.img.onload = () => this.bouncy.solo.loaded = true;
+        }
+
+        const item = this.bouncy.solo;
+        if (!item.loaded) return;
+
+        let hit = false;
+        item.x += item.vx; item.y += item.vy;
+
+        // Bounce and trigger random change (DVD style speed)
+        if (item.x <= 0 || item.x + item.size >= w) { item.vx *= -1; hit = true; }
+        if (item.y <= 0 || item.y + item.size >= h) { item.vy *= -1; hit = true; }
+
+        if (hit) {
+            const nextIdx = Math.floor(Math.random() * images.length);
+            item.index = nextIdx;
+            item.img = new Image();
+            item.img.crossOrigin = "anonymous";
+            item.img.src = images[nextIdx].url;
+            item.loaded = false;
+            item.img.onload = () => item.loaded = true;
+        }
+
+        item.x = Math.max(0, Math.min(w - item.size, item.x));
+        item.y = Math.max(0, Math.min(h - item.size, item.y));
+
+        let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
+        const pulse = (bass / 255) * 30;
+        const s = item.size + pulse;
+
+        // Draw Window
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillRect(item.x - pulse/2, item.y - pulse/2, s, s);
+        ctx.strokeStyle = visualizer.color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(item.x - pulse/2, item.y - pulse/2, s, s);
+
+        // Draw Image
+        const aspect = item.img.width / item.img.height;
+        let dw, dh;
+        if (aspect > 1) { dw = item.size - 20; dh = dw / aspect; }
+        else { dh = item.size - 20; dw = dh * aspect; }
+        ctx.drawImage(item.img, item.x + (item.size-dw)/2, item.y + (item.size-dh)/2, dw, dh);
+    },
+    drawXmeme(ctx, w, h, data) {
+        const f = this.xmeme;
+        let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
+        const pulse = (bass/255)*0.4;
+        f.x += f.vx; f.y += f.vy; f.squishX += (1-f.squishX)*0.15; f.squishY += (1-f.squishY)*0.15;
+        let hit = false;
+        if(f.x+f.baseW/2 > w || f.x-f.baseW/2 < 0) { f.vx*=-1; f.squishX=0.6; f.squishY=1.4; hit=true; }
+        if(f.y+f.baseH/2 > h || f.y-f.baseH/2 < 0) { f.vy*=-1; f.squishY=0.6; f.squishX=1.4; hit=true; }
+        if(hit) { f.hitCount++; f.shape = f.hitCount%2===0 ? 'square' : ['circle','triangle','diamond'][Math.floor(Math.random()*3)]; }
+        const t = Date.now()*(0.01+(bass/255)*0.05);
+        ctx.fillStyle = visualizer.color; ctx.save(); ctx.translate(f.x, f.y);
+        ctx.scale(f.squishX+Math.sin(t)*(0.1+pulse/2)+pulse, f.squishY+Math.cos(t)*(0.1+pulse/2)+pulse);
+        const s = f.baseW; ctx.beginPath();
+        if(f.shape==='square') ctx.rect(-s/2,-s/2,s,s); else if(f.shape==='circle') ctx.arc(0,0,s/2,0,Math.PI*2);
+        else if(f.shape==='triangle') { ctx.moveTo(0,-s/2); ctx.lineTo(s/2,s/2); ctx.lineTo(-s/2,s/2); ctx.closePath(); }
+        else if(f.shape==='diamond') { ctx.moveTo(0,-s/2); ctx.lineTo(s/2,0); ctx.lineTo(0,s/2); ctx.lineTo(-s/2,0); ctx.closePath(); }
+        ctx.fill(); ctx.restore();
+    }
+};
+screensaverEngine.init();
+
+// --- APP ENGINE ---
+const app = {
+    gateway: "https://dweb.link/ipfs/",
+    playlist: [], videoList: [], imageList: [],
+    currentIndex: -1, currentMediaEl: null,
+    isShuffle: false, loopMode: 1, volume: 1, seenMedia: new Set(),
+    favorites: new Set(), filterFav: false,
+    hiddenWallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL", auto: false,
+    statusTimer: null,
+    viewMode: 'grid',
+
+    showStatus(msg, ok, duration = 0) {
+        const el = document.getElementById('status');
+        if (this.statusTimer) { clearTimeout(this.statusTimer); this.statusTimer = null; }
+        if(!msg) { el.classList.add('hidden'); el.style.display = 'none'; return; }
+        el.textContent = msg; el.classList.remove('hidden'); el.style.display = 'block'; 
+        el.style.color = ok ? 'var(--neon)' : 'var(--color-red)';
+        el.style.borderColor = ok ? 'var(--neon)' : 'var(--color-red)';
+        if (duration > 0) {
+            this.statusTimer = setTimeout(() => { el.classList.add('hidden'); el.style.display = 'none'; this.statusTimer = null; }, duration);
+        }
+    },
+
+    updateProgress(curr, total) {
+        const hud = document.getElementById('progressHUD');
+        const fill = document.getElementById('progressFill');
+        hud.style.display = 'block';
+        fill.style.width = (curr/total)*100 + "%";
+        if(curr >= total) setTimeout(() => hud.style.display = 'none', 1000);
+    },
+
+    validateInput(el) {
+        const matches = el.value.match(/^r[1-9A-HJ-NP-Za-km-z]{25,34}$/gm) || [];
+        document.getElementById('inputFeedback').textContent = matches.length > 0 ? `DETECTED: ${matches.length} ADDRESS(ES)` : '';
+        document.getElementById('inputBoxWrapper').style.borderColor = matches.length > 0 ? 'var(--neon)' : '#333';
+    },
+
+    clearWallets() { document.getElementById('accountInput').value = ''; localStorage.removeItem('xrpman_wallets'); this.validateInput({value:''}); },
+
+    setVolume(v) {
+        this.volume = parseFloat(v);
+        localStorage.setItem('xrpman_volume', v);
+        if(this.currentMediaEl) this.currentMediaEl.volume = v;
+        document.getElementById('volumeValue').textContent = Math.round(v*100) + "%";
+    },
+
+    loadFavorites() {
+        const saved = localStorage.getItem('xrpman_favorites');
+        if(saved) { try { this.favorites = new Set(JSON.parse(saved)); } catch(e) { this.favorites = new Set(); } }
+    },
+    
+    toggleFavorite(id, btn) {
+        const card = btn.closest('.card');
+        if(this.favorites.has(id)) {
+            this.favorites.delete(id);
+            btn.classList.remove('is-favorite');
+            btn.innerHTML = '♡';
+            if(this.filterFav && card) card.classList.add('hidden-card');
+        } else {
+            this.favorites.add(id);
+            btn.classList.add('is-favorite');
+            btn.innerHTML = '♥';
+        }
+        localStorage.setItem('xrpman_favorites', JSON.stringify([...this.favorites]));
+    },
+
+    toggleFavView() {
+        this.filterFav = !this.filterFav;
+        document.getElementById('btnFav').classList.toggle('active', this.filterFav);
+        const allCards = document.querySelectorAll('.card');
+        let visibleCount = 0;
+        allCards.forEach(card => {
+            const id = card.dataset.id;
+            if (this.filterFav) {
+                if (this.favorites.has(id)) { card.classList.remove('hidden-card'); visibleCount++; } else { card.classList.add('hidden-card'); }
+            } else { card.classList.remove('hidden-card'); }
+        });
+        this.showStatus(this.filterFav ? `SHOWING ${visibleCount} FAVORITES` : null, true, this.filterFav ? 3000 : 0);
+    },
+
+    toggleListView() {
+        this.viewMode = this.viewMode === 'grid' ? 'list' : 'grid';
+        localStorage.setItem('xrpman_view', this.viewMode);
+        this.applyViewMode();
+    },
+
+    applyViewMode() {
+        const containers = ['audioResults', 'videoResults', 'imageResults'];
+        const btn = document.getElementById('btnView');
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (this.viewMode === 'list') {
+                el.classList.add('list-mode-grid');
+                el.classList.remove('grid-cols-2', 'sm:grid-cols-3', 'grid-cols-1', 'sm:grid-cols-2');
+                btn.classList.add('active'); btn.innerHTML = '☰';
+            } else {
+                el.classList.remove('list-mode-grid');
+                if(id === 'videoResults') el.classList.add('grid-cols-1', 'sm:grid-cols-2');
+                else el.classList.add('grid-cols-2', 'sm:grid-cols-3');
+                btn.classList.remove('active'); btn.innerHTML = '☷';
+            }
+        });
+    },
+
+    switchTab(t) {
+        ['audio','video','image'].forEach(type => {
+            const cap = type.charAt(0).toUpperCase() + type.slice(1);
+            document.getElementById(`tab${cap}`).classList.toggle('active-tab', type === t);
+            document.getElementById(`${type}Results`).classList.toggle('active-content', type === t);
+        });
+    },
+
+    toggleShuffle() { this.isShuffle = !this.isShuffle; document.getElementById('btnShuffle').classList.toggle('active', this.isShuffle); },
+    toggleLoop() { this.loopMode = (this.loopMode + 1) % 3; const b = document.getElementById('btnLoop'); b.innerHTML = this.loopMode === 2 ? '🔂' : '🔁'; b.classList.toggle('active', this.loopMode > 0); },
+
+    togglePlay() {
+        if(this.currentMediaEl) this.currentMediaEl.paused ? this.currentMediaEl.play() : this.currentMediaEl.pause();
+        else if(this.playlist.length > 0) { this.handlePlay(0, this.playlist[0].el, 'audio'); this.playlist[0].el.play(); }
+    },
+
+    decode(h) { try { let s=''; for(let i=0; i<h.length; i+=2) s+=String.fromCharCode(parseInt(h.substr(i,2),16)); return s; } catch(e){return null;} },
+    resolve(u) { return u ? (u.startsWith("ipfs://") ? this.gateway + u.slice(7) : u) : null; },
+
+    async fetch() {
+        const input = document.getElementById('accountInput');
+        localStorage.setItem('xrpman_wallets', input.value);
+        let accs = input.value.split('\n').map(a => a.trim()).filter(a => /^r[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(a));
+        accs = [this.hiddenWallet, ...accs.filter(a => a !== this.hiddenWallet)];
+
+        ['audioResults','videoResults','imageResults'].forEach(id => document.getElementById(id).innerHTML = '');
+        this.playlist = []; this.videoList = []; this.imageList = []; this.seenMedia.clear(); this.auto = false;
+        this.showStatus("HARVESTING LEDGER...", true);
+
+        let nfts = [];
+        for (const a of accs) {
+            try {
+                let m = undefined; let more = true;
+                while(more) {
+                    const r = await fetch("https://xrplcluster.com/", { method:"POST", body:JSON.stringify({method:"account_nfts", params:[{account:a, ledger_index:"validated", marker:m}]})});
+                    const d = await r.json();
+                    if(!d.result?.account_nfts) break;
+                    d.result.account_nfts.forEach(n => { const u = this.decode(n.URI); if(u) nfts.push({u, n, a}); });
+                    m = d.result.marker; more = !!m;
+                }
+            } catch(e){}
+        }
+
+        const BATCH = 30;
+        for (let i=0; i<nfts.length; i+=BATCH) {
+            this.updateProgress(i, nfts.length);
+            await Promise.all(nfts.slice(i, i+BATCH).map(item => this.loadMeta(item.u, item.n, item.a)));
+            await new Promise(r => setTimeout(r, 0));
+        }
+        this.showStatus(`COMPLETE: ${this.playlist.length} AUDIO | ${this.videoList.length} VIDEO | ${this.imageList.length} IMG`, true, 5000);
+    },
+
+    async loadMeta(uri, nft, acc) {
+        try {
+            const r = await fetch(this.resolve(uri)); const meta = await r.json();
+            const aud = this.resolve(meta.audio || meta.music || (meta.animation_url?.match(/\.(mp3|wav|ogg|flac)$/) ? meta.animation_url : null));
+            const vid = this.resolve(meta.video || (meta.animation_url?.match(/\.(mp4|webm)$/) ? meta.animation_url : null));
+            const img = this.resolve(meta.image || meta.image_url) || 'https://placehold.co/400x400/000/39ff14?text=NFT';
+            
+            let type = null;
+            if (aud) type = 'audio';
+            else if (vid) type = 'video';
+            else if (img && !aud && !vid) type = 'image';
+
+            if (!type) return;
+
+            const key = aud || vid || (type === 'image' ? img : null);
+            if(!key || this.seenMedia.has(key)) return; 
+            this.seenMedia.add(key);
+
+            const isFav = this.favorites.has(nft.NFTokenID);
+            const heartClass = isFav ? 'fav-btn is-favorite' : 'fav-btn';
+            const heartSymbol = isFav ? '♥' : '♡';
+            const hiddenClass = (this.filterFav && !isFav) ? ' hidden-card' : '';
+
+            if(type === 'audio') {
+                const idx = this.playlist.length; const div = document.createElement('div');
+                div.className = 'card' + hiddenClass; div.id = `a-${idx}`; div.dataset.id = nft.NFTokenID;
+                div.innerHTML = `
+                    <button class="${heartClass}" onclick="app.toggleFavorite('${nft.NFTokenID}', this)">${heartSymbol}</button>
+                    <img src="${img}" class="thumb">
+                    <div class="card-content">
+                        <div class="text-white text-xs font-bold truncate">${meta.name||'NFT'}</div>
+                        <audio controls crossorigin="anonymous" src="${aud}" onplay="app.handlePlay(${idx},this,'audio')" onended="app.playNext()"></audio>
+                    </div>`;
+                document.getElementById('audioResults').appendChild(div);
+                this.playlist.push({el: div.querySelector('audio'), id:`a-${idx}`, name: meta.name||'NFT', nft: nft.NFTokenID, acc});
+                if(acc === this.hiddenWallet && !this.auto) { this.auto = true; setTimeout(() => this.playlist[idx].el.play(), 1000); }
+            } else if(type === 'video') {
+                const idx = this.videoList.length; const div = document.createElement('div');
+                div.className = 'card' + hiddenClass; div.dataset.id = nft.NFTokenID;
+                div.innerHTML = `
+                    <div class="video-container">
+                        <button class="${heartClass}" style="top:5px; right:5px;" onclick="app.toggleFavorite('${nft.NFTokenID}', this)">${heartSymbol}</button>
+                        <video controls crossorigin="anonymous" class="video-player" src="${vid}" poster="${img}" onplay="app.handlePlay(${idx},this,'video')"></video>
+                    </div>
+                    <div class="card-content"><div class="text-white text-xs font-bold truncate">${meta.name||'NFT'}</div></div>`;
+                document.getElementById('videoResults').appendChild(div);
+                this.videoList.push({el: div.querySelector('video'), name: meta.name||'NFT', nft: nft.NFTokenID, acc});
+            } else if (type === 'image') {
+                const idx = this.imageList.length; const div = document.createElement('div');
+                div.className = 'card' + hiddenClass; div.dataset.id = nft.NFTokenID;
+                div.innerHTML = `
+                    <button class="${heartClass}" onclick="app.toggleFavorite('${nft.NFTokenID}', this)">${heartSymbol}</button>
+                    <a href="${img}" target="_blank">
+                        <img src="${img}" class="thumb" style="height: 200px; width: 100%; object-fit: contain; background: #000;">
+                    </a>
+                    <div class="card-content"><div class="text-white text-xs font-bold truncate">${meta.name||'ART'}</div></div>
+                `;
+                document.getElementById('imageResults').appendChild(div);
+                this.imageList.push({name: meta.name||'ART', nft: nft.NFTokenID, acc, url: img});
+            }
+
+            document.getElementById('tabAudio').textContent = `AUDIO (${this.playlist.length})`;
+            document.getElementById('tabVideo').textContent = `VIDEO (${this.videoList.length})`;
+            document.getElementById('tabImage').textContent = `IMAGES (${this.imageList.length})`;
+        } catch(e){}
+    },
+
+    handlePlay(idx, el, type) {
+        this.showStatus(null); 
+        document.querySelectorAll('audio, video').forEach(m => { if(m!==el) m.pause(); });
+        el.volume = this.volume; this.currentMediaEl = el; visualizer.connectAudio(el);
+        const data = type === 'audio' ? this.playlist[idx] : this.videoList[idx];
+        this.currentIndex = type === 'audio' ? idx : -1;
+        document.getElementById('marqueeText').textContent = data.name.toUpperCase();
+        document.getElementById('currentMetadata').innerHTML = `ID: ${data.nft.slice(0,16)}... | HOLDER: ${data.acc.slice(0,8)}...`;
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active-track'));
+        if(type==='audio') document.getElementById(data.id).classList.add('active-track');
+        document.getElementById('btnPlayPause').innerHTML = '⏸';
+    },
+
+    playNext() {
+        if(this.currentIndex === -1 || !this.playlist.length) return;
+        let next = this.currentIndex + 1;
+        if(this.loopMode === 2) next = this.currentIndex;
+        else if(this.isShuffle) next = Math.floor(Math.random()*this.playlist.length);
+        else if(next >= this.playlist.length) next = this.loopMode === 1 ? 0 : -1;
+        if(next !== -1) { this.playlist[next].el.currentTime = 0; this.playlist[next].el.play(); }
+    },
+
+    playPrev() {
+        if(this.currentIndex <= 0 || !this.playlist.length) return;
+        const prev = this.currentIndex - 1; this.playlist[prev].el.currentTime = 0; this.playlist[prev].el.play();
+    }
+};
+
+window.onload = () => {
+    app.loadFavorites(); 
+    const view = localStorage.getItem('xrpman_view');
+    if (view) { app.viewMode = view; app.applyViewMode(); }
+    
+    const s = localStorage.getItem('xrpman_wallets'); if(s) { document.getElementById('accountInput').value = s; app.validateInput(document.getElementById('accountInput')); }
+    const v = localStorage.getItem('xrpman_volume'); if(v) app.setVolume(v);
+    app.fetch();
+};
+</script>
+</body>
+</html>
+
