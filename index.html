@@ -949,7 +949,7 @@ const screensaverEngine = {
     ctx: null, isActive: false, mode: 'original', offset: 0, rafId: null,
     stars: [], tunnelRotation: 0,
     gallery: { current: null, timer: 0, opacity: 0, nextIdx: -1, loaded: new Map() },
-    bouncy: { solo: null, lastMetaCount: 0 },
+    bouncy: { solo: null, lastMetaCount: 0, pendingImg: null },
     xmeme: { x: 0, y: 0, vx: 3.5, vy: 3.5, baseW: 100, baseH: 100, squishX: 1, squishY: 1, shape: 'square', hitCount: 0 },
     
     init() {
@@ -1065,7 +1065,7 @@ const screensaverEngine = {
             ctx.fillText("NO NFT IMAGES FOUND", w/2, h/2); return;
         }
 
-        // Initialize solo bouncy item if missing (Velocity slowed to 2.2)
+        // Initialize solo bouncy item if missing
         if (!this.bouncy.solo) {
             const size = 200 + Math.random() * 100;
             const idx = Math.floor(Math.random() * images.length);
@@ -1078,27 +1078,32 @@ const screensaverEngine = {
         }
 
         const item = this.bouncy.solo;
-        if (!item.loaded) return;
-
+        
         let hit = false;
         item.x += item.vx; item.y += item.vy;
 
-        // Bounce and trigger random change (DVD style speed)
-        if (item.x <= 0 || item.x + item.size >= w) { item.vx *= -1; hit = true; }
-        if (item.y <= 0 || item.y + item.size >= h) { item.vy *= -1; hit = true; }
+        // Bounce and trigger random change
+        if (item.x <= 0) { item.vx *= -1; item.x = 0; hit = true; }
+        else if (item.x + item.size >= w) { item.vx *= -1; item.x = w - item.size; hit = true; }
+        
+        if (item.y <= 0) { item.vy *= -1; item.y = 0; hit = true; }
+        else if (item.y + item.size >= h) { item.vy *= -1; item.y = h - item.size; hit = true; }
 
         if (hit) {
+            // Preload next image while keeping current one visible
             const nextIdx = Math.floor(Math.random() * images.length);
-            item.index = nextIdx;
-            item.img = new Image();
-            item.img.crossOrigin = "anonymous";
-            item.img.src = images[nextIdx].url;
-            item.loaded = false;
-            item.img.onload = () => item.loaded = true;
+            const nextImg = new Image();
+            nextImg.crossOrigin = "anonymous";
+            nextImg.src = images[nextIdx].url;
+            nextImg.onload = () => {
+                item.img = nextImg;
+                item.index = nextIdx;
+                item.loaded = true;
+            };
         }
 
-        item.x = Math.max(0, Math.min(w - item.size, item.x));
-        item.y = Math.max(0, Math.min(h - item.size, item.y));
+        // Only draw if at least one image has EVER loaded
+        if (!item.img.complete && !item.loaded) return;
 
         let bass = 0; for(let i=0; i<10; i++) bass += data[i]; bass /= 10;
         const pulse = (bass / 255) * 30;
@@ -1112,7 +1117,7 @@ const screensaverEngine = {
         ctx.strokeRect(item.x - pulse/2, item.y - pulse/2, s, s);
 
         // Draw Image
-        const aspect = item.img.width / item.img.height;
+        const aspect = item.img.width / item.img.height || 1;
         let dw, dh;
         if (aspect > 1) { dw = item.size - 20; dh = dw / aspect; }
         else { dh = item.size - 20; dw = dh * aspect; }
