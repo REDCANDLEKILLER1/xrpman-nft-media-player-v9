@@ -583,6 +583,37 @@
             flex-direction: column;
         }
         #eqModal.open { display: flex; }
+
+        /* XMEME POPUP MODAL */
+        #xmemeModal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        #xmemeModal.open { display: flex; }
+        .xmeme-content {
+            position: relative;
+            width: 90%;
+            max-width: 600px;
+            aspect-ratio: 1/1;
+            background: black;
+            border: 2px solid var(--neon);
+            box-shadow: 0 0 30px var(--neon);
+            display: flex;
+            flex-direction: column;
+        }
+        .xmeme-content video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
         .eq-controls {
             display: flex;
             justify-content: space-between;
@@ -727,6 +758,7 @@
             <button id="btnView" class="icon-btn toggle-btn" onclick="app.toggleListView()" title="Toggle Grid/List">☰</button>
             <button id="btnFav" class="icon-btn toggle-btn" onclick="app.toggleFavView()" title="Filter Favorites" style="font-size: 10px;">FAV</button>
             <button id="btnEQ" class="icon-btn toggle-btn active" onclick="eqControl.toggleModal(true)" title="EQ" style="font-size: 10px;">EQ</button>
+            <button id="btnXmeme" class="icon-btn toggle-btn" onclick="app.toggleXmemeModal(true)" title="XMEME Music Video" style="font-size: 8px; color: #00ff00; border-color: #00ff00; background: rgba(0, 255, 0, 0.1); width: auto; padding: 0 4px;">XMEME</button>
         </div>
 
         <!-- VOLUME BAR -->
@@ -783,6 +815,17 @@
     <button class="modal-close-btn" onclick="eqControl.toggleModal(false)">✕</button>
     <h2 class="text-center text-sm text-white font-bold mb-3 tracking-widest">AUDIO EQUALIZER (GAIN dB)</h2>
     <div class="eq-controls" id="eqSliders"></div>
+</div>
+
+<!-- XMEME MODAL -->
+<div id="xmemeModal" onclick="app.toggleXmemeModal(false)">
+    <div class="xmeme-content" onclick="event.stopPropagation()">
+        <button class="modal-close-btn" onclick="app.toggleXmemeModal(false)" style="z-index: 10;">✕</button>
+        <video id="xmemeVideo" controls playsinline>
+            <source src="https://jade-adverse-damselfly-13.mypinata.cloud/ipfs/bafybeih2ztocu3elh3m3khkllac7iqsxgmwed2zodu3icn2qsgu376ziga" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
 </div>
 
 <script>
@@ -1392,6 +1435,20 @@ const app = {
     playPrev() {
         if(this.currentIndex <= 0 || !this.playlist.length) return;
         const prev = this.currentIndex - 1; this.playlist[prev].el.currentTime = 0; this.playlist[prev].el.play();
+    },
+
+    toggleXmemeModal(show) {
+        const m = document.getElementById('xmemeModal');
+        const v = document.getElementById('xmemeVideo');
+        if (show) {
+            m.classList.add('open');
+            v.play().catch(e => console.log(e));
+            // Pause main player if playing
+            if(this.currentMediaEl && !this.currentMediaEl.paused) this.togglePlay();
+        } else {
+            m.classList.remove('open');
+            v.pause();
+        }
     }
 };
 
