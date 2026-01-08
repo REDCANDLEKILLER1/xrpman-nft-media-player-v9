@@ -614,6 +614,60 @@
             object-fit: contain;
         }
 
+        /* TIP MODAL */
+        #tipModal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.9);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        #tipModal.open { display: flex; }
+        .tip-content {
+            background: black;
+            border: 1px solid var(--neon);
+            box-shadow: 0 0 20px var(--neon-dim);
+            padding: 20px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .tip-presets { display: flex; gap: 5px; justify-content: center; margin-top: 5px; }
+        .tip-preset-btn {
+            flex: 1;
+            padding: 5px;
+            font-size: 10px;
+            border: 1px solid #333;
+            color: #888;
+        }
+        .tip-preset-btn:hover { border-color: var(--neon); color: var(--neon); }
+        .tip-qr {
+            width: 180px; height: 180px;
+            margin: 0 auto;
+            border: 2px solid #fff;
+            background: white;
+            padding: 5px;
+        }
+        .tip-address-box {
+            background: #111;
+            border: 1px solid #333;
+            padding: 8px;
+            font-size: 10px;
+            word-break: break-all;
+            cursor: pointer;
+            color: #aaa;
+            transition: all 0.2s;
+        }
+        .tip-address-box:hover { border-color: var(--neon); color: white; }
+
         .eq-controls {
             display: flex;
             justify-content: space-between;
@@ -759,6 +813,7 @@
             <button id="btnFav" class="icon-btn toggle-btn" onclick="app.toggleFavView()" title="Filter Favorites" style="font-size: 10px;">FAV</button>
             <button id="btnEQ" class="icon-btn toggle-btn active" onclick="eqControl.toggleModal(true)" title="EQ" style="font-size: 10px;">EQ</button>
             <button id="btnXmeme" class="icon-btn toggle-btn" onclick="app.toggleXmemeModal(true)" title="XMEME Music Video" style="font-size: 8px; color: #00ff00; border-color: #00ff00; background: rgba(0, 255, 0, 0.1); width: auto; padding: 0 4px;">XMEME</button>
+            <button id="btnTip" class="icon-btn toggle-btn" onclick="app.toggleTipModal(true)" title="Tip the Dev" style="font-size: 10px; color: #ffd700; border-color: #ffd700; background: rgba(255, 215, 0, 0.1);">TIP</button>
         </div>
 
         <!-- VOLUME BAR -->
@@ -825,6 +880,39 @@
             <source src="https://jade-adverse-damselfly-13.mypinata.cloud/ipfs/bafybeih2ztocu3elh3m3khkllac7iqsxgmwed2zodu3icn2qsgu376ziga" type="video/mp4">
             Your browser does not support the video tag.
         </video>
+    </div>
+</div>
+
+<!-- TIP MODAL -->
+<div id="tipModal" onclick="app.toggleTipModal(false)">
+    <div class="tip-content" onclick="event.stopPropagation()">
+        <button class="modal-close-btn" onclick="app.toggleTipModal(false)">✕</button>
+        <h2 class="text-[#ffd700] font-bold tracking-widest text-sm">SUPPORT XRPMAN</h2>
+
+        <div class="flex flex-col gap-2">
+            <label class="text-[9px] text-[#666] font-bold">AMOUNT (XRP)</label>
+            <input type="number" id="tipAmount" value="5" min="1" step="1"
+                   oninput="app.updateTipQR()"
+                   style="text-align: center; color: #ffd700; border-color: #ffd700; font-size: 18px; font-weight: bold;">
+
+            <div class="tip-presets">
+                <button class="tip-preset-btn" onclick="app.setTipAmount(5)">5</button>
+                <button class="tip-preset-btn" onclick="app.setTipAmount(10)">10</button>
+                <button class="tip-preset-btn" onclick="app.setTipAmount(20)">20</button>
+                <button class="tip-preset-btn" onclick="app.setTipAmount(50)">50</button>
+            </div>
+        </div>
+
+        <img id="tipQR" src="" class="tip-qr">
+
+        <button onclick="app.openXumm()" class="w-full h-10 bg-[#ffd700] text-black font-black hover:bg-white transition-all tracking-widest text-xs">
+            OPEN IN XUMM / WALLET
+        </button>
+
+        <div class="tip-address-box" onclick="app.copyTipAddress()" title="Click to Copy">
+            <span class="text-[#ffd700]">r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL</span>
+            <div class="text-[8px] mt-1 text-[#666]">CLICK TO COPY ADDRESS</div>
+        </div>
     </div>
 </div>
 
@@ -1449,6 +1537,40 @@ const app = {
             m.classList.remove('open');
             v.pause();
         }
+    },
+
+    // --- TIP LOGIC ---
+    tipWallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL",
+    toggleTipModal(show) {
+        const m = document.getElementById('tipModal');
+        if (show) {
+            m.classList.add('open');
+            this.updateTipQR();
+        } else {
+            m.classList.remove('open');
+        }
+    },
+    setTipAmount(v) {
+        document.getElementById('tipAmount').value = v;
+        this.updateTipQR();
+    },
+    getTipURI() {
+        const amt = document.getElementById('tipAmount').value || 1;
+        const drops = Math.floor(amt * 1000000);
+        return `ripple:${this.tipWallet}?amount=${drops}&dt=0`;
+    },
+    updateTipQR() {
+        const uri = encodeURIComponent(this.getTipURI());
+        document.getElementById('tipQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${uri}&bgcolor=ffffff`;
+    },
+    openXumm() {
+        const uri = this.getTipURI();
+        window.open(uri, '_blank');
+    },
+    copyTipAddress() {
+        navigator.clipboard.writeText(this.tipWallet).then(() => {
+            this.showStatus("ADDRESS COPIED TO CLIPBOARD", true, 2000);
+        });
     }
 };
 
