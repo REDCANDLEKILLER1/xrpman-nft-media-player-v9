@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.60</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.62</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -617,25 +617,6 @@
             gap: 15px;
         }
 
-        #tipModal input {
-            text-align: center;
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .tip-presets {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .tip-presets button {
-            flex: 1;
-            font-size: 10px;
-            padding: 8px;
-            min-width: 0; /* Prevent overflow */
-        }
-
         .tip-qr-box {
             background: white;
             padding: 10px;
@@ -648,30 +629,10 @@
             height: 170px;
             box-shadow: 0 0 10px var(--neon-dim);
         }
-
-        .tip-btn-main {
-            width: 100%;
-            padding: 12px;
-            background: var(--neon);
-            color: black;
-            font-weight: bold;
-            display: block;
-            text-align: center;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        .tip-btn-main:hover {
-            background: #fff;
-            box-shadow: 0 0 15px var(--neon);
-        }
         
         .tip-btn-copy {
             width: 100%;
-            padding: 8px;
+            padding: 12px;
             background: transparent;
             color: var(--neon);
             font-weight: bold;
@@ -797,7 +758,7 @@
         </div>
         <div class="flex items-end gap-2">
             <button id="btnTip" class="icon-btn toggle-btn" onclick="tipControl.toggleModal(true)" title="TIP CREATOR" style="font-size: 10px; height: 24px; width: auto; padding: 0 8px;">TIP</button>
-            <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.60</div>
+            <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.62</div>
         </div>
     </div>
     
@@ -938,21 +899,10 @@
     <button class="modal-close-btn" onclick="tipControl.toggleModal(false)">✕</button>
     <h2>SUPPORT THE CREATOR (XRP)</h2>
     <div class="tip-content">
-        <input type="number" id="tipAmount" placeholder="AMOUNT (XRP)" oninput="tipControl.updateQR()">
-        <div class="tip-presets">
-            <button onclick="tipControl.setAmount(1)">1 XRP</button>
-            <button onclick="tipControl.setAmount(5)">5 XRP</button>
-            <button onclick="tipControl.setAmount(10)">10 XRP</button>
-            <button onclick="tipControl.setAmount(20)">20 XRP</button>
-        </div>
         <div class="tip-qr-box">
             <img id="tipQR" src="" style="width: 150px; height: 150px; display: none;">
-            <div id="tipPlaceholder" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; color: black; font-size: 10px;">ENTER AMOUNT</div>
+            <div id="tipPlaceholder" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; color: black; font-size: 10px;">LOADING...</div>
         </div>
-        <!-- CHANGED: Replaced simple link with JS trigger button -->
-        <button id="tipBtnMain" onclick="tipControl.executeTip()" class="tip-btn-main">
-            OPEN IN WALLET / XUMM
-        </button>
         <!-- ADDED: Copy fallback -->
         <button onclick="tipControl.copyAddr()" class="tip-btn-copy">
             COPY ADDRESS
@@ -1076,58 +1026,17 @@ const tipControl = {
     wallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL",
     toggleModal(open) {
         document.getElementById('tipModal').classList.toggle('open', open);
-        if(open) this.updateQR();
+        if(open) this.renderQR();
     },
     handleModalClick(e) { if (e.target.id === 'tipModal') this.toggleModal(false); },
-    setAmount(val) {
-        document.getElementById('tipAmount').value = val;
-        this.updateQR();
-    },
-    updateQR() {
-        const amt = document.getElementById('tipAmount').value;
+    renderQR() {
         const qrImg = document.getElementById('tipQR');
-        const placeholder = document.getElementById('tipPlaceholder');
-        const btn = document.getElementById('tipBtnMain');
-
-        if (!amt || amt <= 0) {
-            qrImg.style.display = 'none';
-            placeholder.style.display = 'flex';
-            btn.style.opacity = '0.5';
-            btn.style.pointerEvents = 'none';
-            return;
-        }
-
-        qrImg.style.display = 'block';
-        placeholder.style.display = 'none';
-        btn.style.opacity = '1';
-        btn.style.pointerEvents = 'auto';
-
-        // QR Code generation
-        const drops = Math.floor(parseFloat(amt) * 1000000);
-        const uri = `ripple:${this.wallet}?amount=${drops}`;
+        // Static URI for the address only
+        const uri = `ripple:${this.wallet}`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`;
         qrImg.src = qrUrl;
-    },
-    executeTip() {
-        const amt = document.getElementById('tipAmount').value;
-        if (!amt || amt <= 0) return;
-        
-        const drops = Math.floor(parseFloat(amt) * 1000000);
-        const uri = `ripple:${this.wallet}?amount=${drops}`;
-        
-        // METHOD 1: Window Open (Standard)
-        const win = window.open(uri, '_blank');
-        
-        // METHOD 2: Direct Location (Aggressive, often fixes iframe blocks)
-        if(!win) {
-            try { window.location.assign(uri); } catch(e) {}
-        }
-
-        // Feedback
-        const btn = document.getElementById('tipBtnMain');
-        const oldText = btn.innerHTML;
-        btn.innerHTML = "OPENING WALLET...";
-        setTimeout(() => btn.innerHTML = oldText, 2000);
+        qrImg.style.display = 'block';
+        document.getElementById('tipPlaceholder').style.display = 'none';
     },
     copyAddr() {
         const addr = this.wallet;
