@@ -301,7 +301,7 @@
         }
 
         /* Inputs & Buttons */
-        input[type="text"], textarea, select {
+        input[type="text"], input[type="number"], textarea, select {
             background: #000;
             border: 1px solid #333;
             color: var(--neon);
@@ -584,6 +584,92 @@
         }
         #eqModal.open { display: flex; }
 
+        /* TIP MODAL */
+        #tipModal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid var(--neon);
+            box-shadow: 0 0 25px var(--neon);
+            padding: 20px;
+            z-index: 2000;
+            width: 90%;
+            max-width: 350px;
+            display: none;
+            flex-direction: column;
+        }
+        #tipModal.open { display: flex; }
+
+        #tipModal h2 {
+            text-align: center;
+            font-size: 14px;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            margin-top: 10px;
+        }
+
+        #tipModal .tip-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #tipModal input {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .tip-presets {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .tip-presets button {
+            flex: 1;
+            font-size: 10px;
+            padding: 8px;
+            min-width: 0; /* Prevent overflow */
+        }
+
+        .tip-qr-box {
+            background: white;
+            padding: 10px;
+            margin: 0 auto;
+            border: 2px solid var(--neon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 170px;
+            height: 170px;
+            box-shadow: 0 0 10px var(--neon-dim);
+        }
+
+        .tip-btn-main {
+            width: 100%;
+            padding: 12px;
+            background: var(--neon);
+            color: black;
+            font-weight: bold;
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .tip-btn-main:hover {
+            background: #fff;
+            box-shadow: 0 0 15px var(--neon);
+        }
+
         /* XMEME POPUP MODAL */
         #xmemeModal {
             position: fixed;
@@ -758,6 +844,7 @@
             <button id="btnView" class="icon-btn toggle-btn" onclick="app.toggleListView()" title="Toggle Grid/List">☰</button>
             <button id="btnFav" class="icon-btn toggle-btn" onclick="app.toggleFavView()" title="Filter Favorites" style="font-size: 10px;">FAV</button>
             <button id="btnEQ" class="icon-btn toggle-btn active" onclick="eqControl.toggleModal(true)" title="EQ" style="font-size: 10px;">EQ</button>
+            <button id="btnTip" class="icon-btn toggle-btn" onclick="tipControl.toggleModal(true)" title="TIP CREATOR" style="font-size: 10px;">TIP</button>
             <button id="btnXmeme" class="icon-btn toggle-btn" onclick="app.toggleXmemeModal(true)" title="XMEME Music Video" style="font-size: 8px; color: #00ff00; border-color: #00ff00; background: rgba(0, 255, 0, 0.1); width: auto; padding: 0 4px;">XMEME</button>
         </div>
 
@@ -815,6 +902,28 @@
     <button class="modal-close-btn" onclick="eqControl.toggleModal(false)">✕</button>
     <h2 class="text-center text-sm text-white font-bold mb-3 tracking-widest">AUDIO EQUALIZER (GAIN dB)</h2>
     <div class="eq-controls" id="eqSliders"></div>
+</div>
+
+<!-- TIP MODAL -->
+<div id="tipModal" onclick="tipControl.handleModalClick(event)">
+    <button class="modal-close-btn" onclick="tipControl.toggleModal(false)">✕</button>
+    <h2>SUPPORT THE CREATOR (XRP)</h2>
+    <div class="tip-content">
+        <input type="number" id="tipAmount" placeholder="AMOUNT (XRP)" oninput="tipControl.updateQR()">
+        <div class="tip-presets">
+            <button onclick="tipControl.setAmount(1)">1 XRP</button>
+            <button onclick="tipControl.setAmount(5)">5 XRP</button>
+            <button onclick="tipControl.setAmount(10)">10 XRP</button>
+            <button onclick="tipControl.setAmount(20)">20 XRP</button>
+        </div>
+        <div class="tip-qr-box">
+            <img id="tipQR" src="" style="width: 150px; height: 150px; display: none;">
+            <div id="tipPlaceholder" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; color: black; font-size: 10px;">ENTER AMOUNT</div>
+        </div>
+        <a id="tipLink" href="#" target="_blank" class="tip-btn-main">
+            OPEN IN WALLET / XUMM
+        </a>
+    </div>
 </div>
 
 <!-- XMEME MODAL -->
@@ -907,6 +1016,48 @@ const eqControl = {
         document.getElementById('eqModal').classList.toggle('open', open);
     },
     handleModalClick(e) { if (e.target.id === 'eqModal') this.toggleModal(false); }
+};
+
+// --- TIP ENGINE ---
+const tipControl = {
+    wallet: "r9nepSD5tvQUCA4qQAJJDAoBB3j1gf4ibL",
+    toggleModal(open) {
+        document.getElementById('tipModal').classList.toggle('open', open);
+        if(open) this.updateQR();
+    },
+    handleModalClick(e) { if (e.target.id === 'tipModal') this.toggleModal(false); },
+    setAmount(val) {
+        document.getElementById('tipAmount').value = val;
+        this.updateQR();
+    },
+    updateQR() {
+        const amt = document.getElementById('tipAmount').value;
+        const qrImg = document.getElementById('tipQR');
+        const placeholder = document.getElementById('tipPlaceholder');
+        const linkBtn = document.getElementById('tipLink');
+
+        if (!amt || amt <= 0) {
+            qrImg.style.display = 'none';
+            placeholder.style.display = 'flex';
+            linkBtn.href = '#';
+            return;
+        }
+
+        qrImg.style.display = 'block';
+        placeholder.style.display = 'none';
+
+        // XRP to drops (1 XRP = 1,000,000 drops)
+        // Standard: ripple:<address>?amount=<drops>
+        const drops = Math.floor(parseFloat(amt) * 1000000);
+        const uri = `ripple:${this.wallet}?amount=${drops}`;
+
+        // Generate QR
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`;
+        qrImg.src = qrUrl;
+
+        // Update Link
+        linkBtn.href = uri;
+    }
 };
 
 // --- VISUALIZER ENGINE (FIXED LOGIC) ---
