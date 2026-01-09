@@ -768,7 +768,10 @@
             <h1 class="font-bold neon-fire-text tracking-wider">XRPL NFT MEDIA PLAYER</h1>
             <p class="powered-by-text">POWERED BY XMEME</p>
         </div>
-        <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.55</div>
+        <div class="flex items-end gap-2">
+            <button id="btnTip" class="icon-btn toggle-btn" onclick="tipControl.toggleModal(true)" title="TIP CREATOR" style="font-size: 10px; height: 24px; width: auto; padding: 0 8px;">TIP</button>
+            <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.55</div>
+        </div>
     </div>
     
     <!-- CURRENT TRACK DISPLAY -->
@@ -844,7 +847,6 @@
             <button id="btnView" class="icon-btn toggle-btn" onclick="app.toggleListView()" title="Toggle Grid/List">☰</button>
             <button id="btnFav" class="icon-btn toggle-btn" onclick="app.toggleFavView()" title="Filter Favorites" style="font-size: 10px;">FAV</button>
             <button id="btnEQ" class="icon-btn toggle-btn active" onclick="eqControl.toggleModal(true)" title="EQ" style="font-size: 10px;">EQ</button>
-            <button id="btnTip" class="icon-btn toggle-btn" onclick="tipControl.toggleModal(true)" title="TIP CREATOR" style="font-size: 10px;">TIP</button>
             <button id="btnXmeme" class="icon-btn toggle-btn" onclick="app.toggleXmemeModal(true)" title="XMEME Music Video" style="font-size: 8px; color: #00ff00; border-color: #00ff00; background: rgba(0, 255, 0, 0.1); width: auto; padding: 0 4px;">XMEME</button>
         </div>
 
@@ -920,7 +922,7 @@
             <img id="tipQR" src="" style="width: 150px; height: 150px; display: none;">
             <div id="tipPlaceholder" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; color: black; font-size: 10px;">ENTER AMOUNT</div>
         </div>
-        <a id="tipLink" href="#" target="_blank" class="tip-btn-main">
+        <a id="tipLink" href="#" class="tip-btn-main">
             OPEN IN WALLET / XUMM
         </a>
     </div>
