@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRPMan XRPL NFT MEDIA PLAYER V9.55</title>
+    <title>XRPMan XRPL NFT MEDIA PLAYER V9.60</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css"></script>
     <style>
         /* XRP MAN THEME - NEON LIME & VOID BLACK */
@@ -316,7 +316,7 @@
         }
         input:focus, textarea:focus { border-color: var(--neon); box-shadow: 0 0 10px var(--neon); }
         
-        /* CONTROL BAR STYLES */
+        /* CONTROL BAR STYLES (LAYOUT FIX) */
         .control-bar {
             display: flex;
             align-items: center;
@@ -324,12 +324,11 @@
             background: var(--glass);
             border: 1px solid var(--neon);
             border-top: none; 
-            padding: 6px 2px;
+            padding: 8px 4px;
             margin-bottom: 0px; 
-            gap: 2px;
+            gap: 8px;
             box-shadow: 0 0 15px var(--neon-dim);
-            flex-wrap: nowrap; 
-            overflow-x: hidden;
+            flex-wrap: wrap; /* ALLOW WRAPPING */
         }
 
         /* Volume Bar */
@@ -550,7 +549,7 @@
             word-break: break-all;
         }
 
-        /* LINK TREE STYLING */
+        /* LINK FOOTER */
         .link-footer {
             padding: 10px;
             text-align: center;
@@ -669,6 +668,22 @@
             background: #fff;
             box-shadow: 0 0 15px var(--neon);
         }
+        
+        .tip-btn-copy {
+            width: 100%;
+            padding: 8px;
+            background: transparent;
+            color: var(--neon);
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid var(--neon);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .tip-btn-copy:hover {
+            background: rgba(57, 255, 20, 0.1);
+        }
 
         /* XMEME POPUP MODAL */
         #xmemeModal {
@@ -754,6 +769,18 @@
 </head>
 <body>
 
+<!-- SPLASH SCREEN -->
+<div id="splashScreen" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center; transition: opacity 1s ease;">
+    <!-- ADDED MUTED ATTRIBUTE TO ENSURE AUTOPLAY ATTEMPT -->
+    <video id="splashVideo" style="width: 100%; height: 100%; object-fit: cover;" playsinline muted>
+        <source src="https://jade-adverse-damselfly-13.mypinata.cloud/ipfs/bafybeihd33fvt5oyzay5idiyi74mxesgdhuyuuscnlaxni7dr7n5hzqr7a" type="video/mp4">
+    </video>
+    <button id="splashStartBtn" onclick="initSplash()" style="position: absolute; display: none; background: rgba(0,0,0,0.8); color: #39ff14; border: 2px solid #39ff14; padding: 20px 40px; font-size: 20px; font-family: 'Courier New'; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px #39ff14;">
+        INITIALIZE SYSTEM
+    </button>
+    <button onclick="closeSplash()" style="position: absolute; top: 20px; right: 20px; background: transparent; border: 1px solid #333; color: #666; padding: 5px 10px; font-size: 10px; cursor: pointer; z-index: 5001;">SKIP INTRO</button>
+</div>
+
 <!-- BACKGROUND CANVAS (Matrix Rain) -->
 <canvas id="matrixCanvas"></canvas>
 
@@ -770,7 +797,7 @@
         </div>
         <div class="flex items-end gap-2">
             <button id="btnTip" class="icon-btn toggle-btn" onclick="tipControl.toggleModal(true)" title="TIP CREATOR" style="font-size: 10px; height: 24px; width: auto; padding: 0 8px;">TIP</button>
-            <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.55</div>
+            <div class="text-[10px] text-black font-bold px-2 py-1 version-tag">V9.60</div>
         </div>
     </div>
     
@@ -922,9 +949,14 @@
             <img id="tipQR" src="" style="width: 150px; height: 150px; display: none;">
             <div id="tipPlaceholder" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; color: black; font-size: 10px;">ENTER AMOUNT</div>
         </div>
-        <a id="tipLink" href="#" class="tip-btn-main">
+        <!-- CHANGED: Replaced simple link with JS trigger button -->
+        <button id="tipBtnMain" onclick="tipControl.executeTip()" class="tip-btn-main">
             OPEN IN WALLET / XUMM
-        </a>
+        </button>
+        <!-- ADDED: Copy fallback -->
+        <button onclick="tipControl.copyAddr()" class="tip-btn-copy">
+            COPY ADDRESS
+        </button>
     </div>
 </div>
 
@@ -978,6 +1010,25 @@ const wakeLockManager = {
     async requestLock() { if ('wakeLock' in navigator) try { this.wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} },
     releaseLock() { if (this.wakeLock) { this.wakeLock.release().then(() => this.wakeLock = null); } }
 };
+
+// --- SPLASH ENGINE (FIXED) ---
+const splash = document.getElementById('splashScreen');
+const vid = document.getElementById('splashVideo');
+const btn = document.getElementById('splashStartBtn');
+
+window.initSplash = () => {
+    btn.style.display = 'none';
+    vid.currentTime = 0;
+    vid.muted = false;
+    vid.play().catch(e => console.log("Manual play failed:", e));
+}
+
+window.closeSplash = () => {
+    splash.style.opacity = '0';
+    setTimeout(() => splash.style.display = 'none', 1000);
+}
+
+vid.onended = window.closeSplash;
 
 // --- EQ ENGINE ---
 const eqControl = {
@@ -1036,29 +1087,62 @@ const tipControl = {
         const amt = document.getElementById('tipAmount').value;
         const qrImg = document.getElementById('tipQR');
         const placeholder = document.getElementById('tipPlaceholder');
-        const linkBtn = document.getElementById('tipLink');
+        const btn = document.getElementById('tipBtnMain');
 
         if (!amt || amt <= 0) {
             qrImg.style.display = 'none';
             placeholder.style.display = 'flex';
-            linkBtn.href = '#';
+            btn.style.opacity = '0.5';
+            btn.style.pointerEvents = 'none';
             return;
         }
 
         qrImg.style.display = 'block';
         placeholder.style.display = 'none';
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
 
-        // XRP to drops (1 XRP = 1,000,000 drops)
-        // Standard: ripple:<address>?amount=<drops>
+        // QR Code generation
         const drops = Math.floor(parseFloat(amt) * 1000000);
         const uri = `ripple:${this.wallet}?amount=${drops}`;
-
-        // Generate QR
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(uri)}`;
         qrImg.src = qrUrl;
+    },
+    executeTip() {
+        const amt = document.getElementById('tipAmount').value;
+        if (!amt || amt <= 0) return;
+        
+        const drops = Math.floor(parseFloat(amt) * 1000000);
+        const uri = `ripple:${this.wallet}?amount=${drops}`;
+        
+        // METHOD 1: Window Open (Standard)
+        const win = window.open(uri, '_blank');
+        
+        // METHOD 2: Direct Location (Aggressive, often fixes iframe blocks)
+        if(!win) {
+            try { window.location.assign(uri); } catch(e) {}
+        }
 
-        // Update Link
-        linkBtn.href = uri;
+        // Feedback
+        const btn = document.getElementById('tipBtnMain');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = "OPENING WALLET...";
+        setTimeout(() => btn.innerHTML = oldText, 2000);
+    },
+    copyAddr() {
+        const addr = this.wallet;
+        navigator.clipboard.writeText(addr).then(() => {
+            app.showStatus("WALLET ADDRESS COPIED", true, 2000);
+        }).catch(() => {
+            // Fallback for older browsers or restricted contexts
+            const ta = document.createElement('textarea');
+            ta.value = addr;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            app.showStatus("WALLET ADDRESS COPIED", true, 2000);
+        });
     }
 };
 
@@ -1456,8 +1540,14 @@ const app = {
     toggleLoop() { this.loopMode = (this.loopMode + 1) % 3; const b = document.getElementById('btnLoop'); b.innerHTML = this.loopMode === 2 ? '🔂' : '🔁'; b.classList.toggle('active', this.loopMode > 0); },
 
     togglePlay() {
-        if(this.currentMediaEl) this.currentMediaEl.paused ? this.currentMediaEl.play() : this.currentMediaEl.pause();
-        else if(this.playlist.length > 0) { this.handlePlay(0, this.playlist[0].el, 'audio'); this.playlist[0].el.play(); }
+        if(this.currentMediaEl) {
+            if (this.currentMediaEl.paused) this.currentMediaEl.play().catch(e => console.warn(e));
+            else this.currentMediaEl.pause();
+        }
+        else if(this.playlist.length > 0) { 
+            this.handlePlay(0, this.playlist[0].el, 'audio'); 
+            this.playlist[0].el.play().catch(e => console.warn(e)); 
+        }
     },
 
     decode(h) { try { let s=''; for(let i=0; i<h.length; i+=2) s+=String.fromCharCode(parseInt(h.substr(i,2),16)); return s; } catch(e){return null;} },
@@ -1531,7 +1621,12 @@ const app = {
                     </div>`;
                 document.getElementById('audioResults').appendChild(div);
                 this.playlist.push({el: div.querySelector('audio'), id:`a-${idx}`, name: meta.name||'NFT', nft: nft.NFTokenID, acc});
-                if(acc === this.hiddenWallet && !this.auto) { this.auto = true; setTimeout(() => this.playlist[idx].el.play(), 1000); }
+                
+                // FIXED AUTOPLAY LOGIC
+                if(acc === this.hiddenWallet && !this.auto) { 
+                    this.auto = true; 
+                    // No music autoplay here, intentional per instructions.
+                }
             } else if(type === 'video') {
                 const idx = this.videoList.length; const div = document.createElement('div');
                 div.className = 'card' + hiddenClass; div.dataset.id = nft.NFTokenID;
@@ -1582,12 +1677,17 @@ const app = {
         if(this.loopMode === 2) next = this.currentIndex;
         else if(this.isShuffle) next = Math.floor(Math.random()*this.playlist.length);
         else if(next >= this.playlist.length) next = this.loopMode === 1 ? 0 : -1;
-        if(next !== -1) { this.playlist[next].el.currentTime = 0; this.playlist[next].el.play(); }
+        if(next !== -1) { 
+            this.playlist[next].el.currentTime = 0; 
+            this.playlist[next].el.play().catch(e => console.warn(e)); 
+        }
     },
 
     playPrev() {
         if(this.currentIndex <= 0 || !this.playlist.length) return;
-        const prev = this.currentIndex - 1; this.playlist[prev].el.currentTime = 0; this.playlist[prev].el.play();
+        const prev = this.currentIndex - 1; 
+        this.playlist[prev].el.currentTime = 0; 
+        this.playlist[prev].el.play().catch(e => console.warn(e));
     },
 
     toggleXmemeModal(show) {
@@ -1606,6 +1706,16 @@ const app = {
 };
 
 window.onload = () => {
+    // RESET SPLASH STATE
+    vid.currentTime = 0;
+    vid.muted = false; // Try unmuted
+    vid.play().then(() => {
+        // Success
+    }).catch(e => {
+        console.log("Autoplay blocked, showing button:", e);
+        btn.style.display = 'block';
+    });
+
     app.loadFavorites(); 
     const view = localStorage.getItem('xrpman_view');
     if (view) { app.viewMode = view; app.applyViewMode(); }
@@ -1617,4 +1727,3 @@ window.onload = () => {
 </script>
 </body>
 </html>
-
